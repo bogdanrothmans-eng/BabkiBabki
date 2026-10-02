@@ -1,8 +1,15 @@
 "use client"
 
 import { ru } from "date-fns/locale"
-import { CalendarIcon, CameraIcon, Settings2Icon, XIcon } from "lucide-react"
-import Link from "next/link"
+import {
+  CalendarIcon,
+  CameraIcon,
+  ChevronUpIcon,
+  EllipsisIcon,
+  MessageSquareTextIcon,
+  UserIcon,
+  XIcon,
+} from "lucide-react"
 import { startTransition, useActionState, useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 
@@ -14,7 +21,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Spinner } from "@/components/ui/spinner"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { saveTransaction, type SaveResult } from "@/lib/actions/transactions"
 import { compressImage } from "@/lib/compress-image"
 import { formatAmountInput, formatMoney, parseAmount, toInputValue } from "@/lib/money"
@@ -42,6 +48,8 @@ export type TransactionDraft = {
 }
 
 const QUICK_CATEGORIES = 8
+const TILE =
+  "flex min-h-20 flex-col items-center justify-start gap-1.5 rounded-xl border border-transparent px-1 py-2 text-center text-xs leading-tight transition-colors duration-150"
 
 type Errors = { amount?: string; category?: string }
 
@@ -65,6 +73,7 @@ export function TransactionForm({
   const [date, setDate] = useState(initial?.date ?? isoDate(new Date()))
   const [memberId, setMemberId] = useState(initial?.memberId ?? currentUserId)
   const [showAll, setShowAll] = useState(false)
+  const [showNote, setShowNote] = useState(!!initial?.note)
   const [photos, setPhotos] = useState<{ file: File; url: string }[]>([])
   const [errors, setErrors] = useState<Errors>({})
   const [preparing, setPreparing] = useState(false)
@@ -85,7 +94,9 @@ export function TransactionForm({
     // Most used first so the usual 3–4 categories are always one tap away.
     const quick = [...ofKind].sort((a, b) => b.used - a.used).slice(0, QUICK_CATEGORIES)
     const selected = ofKind.find((c) => c.id === categoryId)
-    if (selected && !quick.includes(selected)) quick[quick.length - 1] = selected
+    // Keep the chosen category visible even when it is not among the usual ones.
+    const shown = ofKind.length > QUICK_CATEGORIES ? QUICK_CATEGORIES - 1 : QUICK_CATEGORIES
+    if (selected && !quick.slice(0, shown).includes(selected)) quick.splice(shown - 1, 1, selected)
     return { quick, all: ofKind }
   }, [categories, kind, categoryId])
 
@@ -97,6 +108,12 @@ export function TransactionForm({
   const serverError = state && !state.ok ? state.error : undefined
 
   const parsed = parseAmount(amount)
+  const hasMore = options.all.length > QUICK_CATEGORIES
+  // With more categories than fit, the 8th tile becomes "Ещё".
+  const visible = showAll ? options.all : hasMore ? options.quick.slice(0, QUICK_CATEGORIES - 1) : options.quick
+  const payer = members.find((m) => m.id === memberId) ?? members[0]
+  const payerLabel = `${kind === "expense" ? "Платит" : "Получает"} ${payer?.name}`
+  const dateLabel = date === today ? "Сегодня" : date === yesterday ? "Вчера" : formatDay(date, true)
 
   async function submit(form: FormData) {
     const next: Errors = {}
@@ -178,18 +195,9 @@ export function TransactionForm({
         aria-invalid={!!errors.category}
         aria-describedby={errors.category ? "category-error" : undefined}
       >
-        <div className="flex items-center justify-between">
-          <legend className="text-sm font-medium">Категория</legend>
-          <Link
-            href="/categories"
-            className="flex min-h-11 items-center gap-1 text-sm text-muted-foreground hover:text-foreground md:min-h-0"
-          >
-            <Settings2Icon className="size-4" aria-hidden />
-            Настроить
-          </Link>
-        </div>
+        <legend className="sr-only">Категория</legend>
         <div className="grid grid-cols-4 gap-2">
-          {(showAll ? options.all : options.quick).map((c) => (
+          {visible.map((c) => (
             <button
               key={c.id}
               type="button"
@@ -199,7 +207,7 @@ export function TransactionForm({
               }}
               aria-pressed={categoryId === c.id}
               className={cn(
-                "flex min-h-20 flex-col items-center justify-start gap-1.5 rounded-xl border border-transparent px-1 py-2 text-center text-xs leading-tight transition-colors duration-150",
+                TILE,
                 "hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none",
                 categoryId === c.id && "border-primary bg-accent font-medium",
               )}
@@ -208,133 +216,137 @@ export function TransactionForm({
               <span className="line-clamp-2 break-words">{c.name}</span>
             </button>
           ))}
+          {hasMore && (
+            <button
+              type="button"
+              onClick={() => setShowAll((v) => !v)}
+              aria-expanded={showAll}
+              className={cn(TILE, "text-muted-foreground hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none")}
+            >
+              <span className="flex size-10 items-center justify-center rounded-xl bg-muted">
+                {showAll ? <ChevronUpIcon className="size-5" aria-hidden /> : <EllipsisIcon className="size-5" aria-hidden />}
+              </span>
+              {showAll ? "Свернуть" : `Ещё ${options.all.length - QUICK_CATEGORIES + 1}`}
+            </button>
+          )}
         </div>
         {errors.category && (
           <p id="category-error" className="text-sm text-destructive">
             {errors.category}
           </p>
         )}
-        {options.all.length > QUICK_CATEGORIES && (
-          <Button type="button" variant="ghost" onClick={() => setShowAll((v) => !v)} aria-expanded={showAll}>
-            {showAll ? "Свернуть" : `Все категории (${options.all.length})`}
-          </Button>
-        )}
       </fieldset>
 
-      <div className="flex flex-col gap-2">
-        <span className="text-sm font-medium" id="date-label">
-          Дата
-        </span>
-        <div className="flex flex-wrap gap-2" role="group" aria-labelledby="date-label">
-          <Button type="button" size="sm" variant={date === today ? "default" : "outline"} onClick={() => setDate(today)}>
-            Сегодня
-          </Button>
+      {/* Everything optional folds into one row of chips (progressive disclosure). */}
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap [&>button]:justify-start sm:[&>button]:justify-center">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button type="button" variant="outline" size="sm" className="rounded-full" aria-label={`Дата: ${dateLabel}`}>
+              <CalendarIcon aria-hidden />
+              {dateLabel}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <div className="flex gap-2 p-3 pb-0">
+              <Button type="button" size="sm" variant={date === today ? "default" : "outline"} onClick={() => setDate(today)}>
+                Сегодня
+              </Button>
+              <Button type="button" size="sm" variant={date === yesterday ? "default" : "outline"} onClick={() => setDate(yesterday)}>
+                Вчера
+              </Button>
+            </div>
+            <Calendar
+              mode="single"
+              locale={ru}
+              selected={parseIso(date)}
+              defaultMonth={parseIso(date)}
+              onSelect={(d) => d && setDate(isoDate(d))}
+            />
+          </PopoverContent>
+        </Popover>
+
+        {members.length > 1 && (
           <Button
             type="button"
-            size="sm"
-            variant={date === yesterday ? "default" : "outline"}
-            onClick={() => setDate(yesterday)}
-          >
-            Вчера
-          </Button>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button type="button" size="sm" variant={date !== today && date !== yesterday ? "default" : "outline"}>
-                <CalendarIcon aria-hidden />
-                {date !== today && date !== yesterday ? formatDay(date, true) : "Другая дата"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                locale={ru}
-                selected={parseIso(date)}
-                defaultMonth={parseIso(date)}
-                onSelect={(d) => d && setDate(isoDate(d))}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
-
-      {members.length > 1 && (
-        <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium" id="member-label">
-            {kind === "expense" ? "Кто платил" : "Кто получил"}
-          </span>
-          <ToggleGroup
-            type="single"
             variant="outline"
-            value={memberId ?? ""}
-            onValueChange={(v) => v && setMemberId(v)}
-            className="w-full"
-            aria-labelledby="member-label"
+            size="sm"
+            className="rounded-full"
+            // The accessible name starts with the visible text (WCAG 2.5.3 Label in Name).
+            aria-label={`${payerLabel}. Нажмите, чтобы сменить`}
+            onClick={() => {
+              const i = members.findIndex((m) => m.id === memberId)
+              setMemberId(members[(i + 1) % members.length].id)
+            }}
           >
-            {members.map((m) => (
-              <ToggleGroupItem
-                key={m.id}
-                value={m.id}
-                className="flex-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-              >
-                {m.id === currentUserId ? `${m.name} (я)` : m.name}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        </div>
-      )}
+            <UserIcon aria-hidden />
+            {payerLabel}
+          </Button>
+        )}
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="note">Комментарий</Label>
-        <Textarea
-          id="note"
-          name="note"
-          defaultValue={initial?.note}
-          placeholder="Например: Пятёрочка, корм коту"
-          rows={2}
-          maxLength={500}
-          className="text-base md:text-sm"
-        />
+        {!showNote && (
+          <Button type="button" variant="outline" size="sm" className="rounded-full" onClick={() => setShowNote(true)}>
+            <MessageSquareTextIcon aria-hidden />
+            Комментарий
+          </Button>
+        )}
+
+        {!editing && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+            onClick={() => fileInput.current?.click()}
+          >
+            <CameraIcon aria-hidden />
+            {photos.length ? `Чек · ${photos.length}` : "Чек"}
+          </Button>
+        )}
       </div>
 
-      {!editing && (
+      {showNote && (
         <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Чек или фото</span>
-          <div className="flex flex-wrap gap-2">
-            {photos.map((p) => (
-              <PhotoPreview
-                key={p.url}
-                file={p.file}
-                url={p.url}
-                onRemove={() => {
-                  URL.revokeObjectURL(p.url)
-                  setPhotos(photos.filter((x) => x !== p))
-                }}
-              />
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              className="h-16 w-16 flex-col gap-1 text-xs md:h-16"
-              onClick={() => fileInput.current?.click()}
-            >
-              <CameraIcon className="size-5" aria-hidden />
-              Добавить
-            </Button>
-          </div>
-          <input
-            ref={fileInput}
-            type="file"
-            accept="image/*,application/pdf"
-            multiple
-            hidden
-            onChange={(e) => {
-              const added = Array.from(e.target.files ?? []).map((file) => ({ file, url: URL.createObjectURL(file) }))
-              setPhotos([...photos, ...added])
-              e.target.value = ""
-            }}
+          <Label htmlFor="note">Комментарий</Label>
+          <Textarea
+            id="note"
+            name="note"
+            defaultValue={initial?.note}
+            placeholder="Например: Пятёрочка, корм коту"
+            rows={2}
+            maxLength={500}
+            autoFocus={!initial?.note}
+            className="text-base md:text-sm"
           />
         </div>
       )}
+
+      {photos.length > 0 && (
+        <div className="flex flex-wrap gap-3">
+          {photos.map((p) => (
+            <PhotoPreview
+              key={p.url}
+              file={p.file}
+              url={p.url}
+              onRemove={() => {
+                URL.revokeObjectURL(p.url)
+                setPhotos(photos.filter((x) => x !== p))
+              }}
+            />
+          ))}
+        </div>
+      )}
+      <input
+        ref={fileInput}
+        type="file"
+        accept="image/*,application/pdf"
+        multiple
+        hidden
+        onChange={(e) => {
+          const added = Array.from(e.target.files ?? []).map((file) => ({ file, url: URL.createObjectURL(file) }))
+          setPhotos([...photos, ...added])
+          e.target.value = ""
+        }}
+      />
 
       <div className="sticky bottom-0 -mb-1 flex flex-col gap-2 bg-background pt-2 pb-1">
         {serverError && !pending && (

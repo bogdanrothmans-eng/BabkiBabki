@@ -15,7 +15,7 @@ export default function OverviewPage() {
     <OverviewView
       period={period}
       summary={getSummary(s, period)}
-      recent={listTransactions(s, period, { limit: 8 })}
+      rows={listTransactions(s, period)}
       memberCount={s.members.length}
     />
   )

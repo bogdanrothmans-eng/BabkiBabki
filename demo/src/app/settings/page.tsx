@@ -1,15 +1,17 @@
 "use client"
 
-import { ChevronRightIcon, CodeIcon, TagsIcon } from "lucide-react"
+import { ChevronRightIcon, CodeIcon, RotateCcwIcon, TagsIcon } from "lucide-react"
 import Link from "next/link"
+import { toast } from "sonner"
 
 import { BudgetNameForm } from "@/components/budget-name-form"
 import { ImportForm } from "@/components/import-form"
 import { MemberAvatar } from "@/components/member-avatars"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
-import { useDemo } from "../../store"
+import { resetDemo, useDemo } from "../../store"
 
 const REPO = "https://github.com/bogdanrothmans-eng/BabkiBabki"
 
@@ -26,7 +28,7 @@ export default function SettingsPage() {
             <h2>Участники</h2>
           </CardTitle>
           <CardDescription>
-            В демо оба партнёра уже в бюджете — переключайтесь между ними вверху страницы. В полной версии второго
+            В демо оба партнёра уже в бюджете — переключайтесь между ними в строке «Демо» вверху. В полной версии второго
             человека зовут одноразовой ссылкой.
           </CardDescription>
         </CardHeader>
@@ -78,8 +80,19 @@ export default function SettingsPage() {
             <h2>Бюджет</h2>
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-4">
           <BudgetNameForm key={s.budget.name} name={s.budget.name} />
+          <Button
+            variant="outline"
+            className="self-start"
+            onClick={() => {
+              resetDemo()
+              toast.success("Демо сброшено к исходным данным")
+            }}
+          >
+            <RotateCcwIcon aria-hidden />
+            Сбросить демо
+          </Button>
         </CardContent>
       </Card>
 

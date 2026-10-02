@@ -1,6 +1,7 @@
 import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
 import Link from "next/link"
 
+import { BackButton } from "@/components/back-button"
 import { CategoryIcon } from "@/components/category-icon"
 import { MonthColumns } from "@/components/month-columns"
 import { Button } from "@/components/ui/button"
@@ -82,6 +83,7 @@ export function TableView({ year, pivot }: { year: number; pivot: YearPivot }) {
 
   return (
     <div className="flex flex-col gap-4">
+      <BackButton href="/reports" label="Отчёты" />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
           <Button asChild variant="ghost" size="icon" aria-label="Предыдущий год">

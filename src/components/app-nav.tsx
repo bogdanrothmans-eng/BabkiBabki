@@ -1,47 +1,42 @@
 "use client"
 
-import { EllipsisIcon, HomeIcon, ListIcon, Table2Icon } from "lucide-react"
+import { ChartPieIcon, ReceiptTextIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 import { AddTransactionTab } from "@/components/add-transaction"
 import { cn } from "@/lib/utils"
 
-const DESKTOP_LINKS = [
-  { href: "/", label: "Обзор" },
-  { href: "/transactions", label: "Записи" },
-  { href: "/table", label: "Таблица" },
-  { href: "/categories", label: "Категории" },
-  { href: "/settings", label: "Настройки" },
+// Two places plus the add button — everything else (categories, settings)
+// lives in the account menu (ui-ux-pro-max `nav-hierarchy`, `overflow-menu`).
+const LINKS = [
+  {
+    href: "/",
+    label: "Траты",
+    icon: ReceiptTextIcon,
+    match: (p: string) => p === "/" || p.startsWith("/entry"),
+  },
+  {
+    href: "/reports",
+    label: "Отчёты",
+    icon: ChartPieIcon,
+    // Category / person drill-downs are opened from Reports.
+    match: (p: string) => p.startsWith("/reports") || p.startsWith("/table") || p === "/transactions",
+  },
 ]
-
-// Max five slots (ui-ux-pro-max `bottom-nav-limit`); the add button sits in
-// the middle like YNAB's, so nothing floats over the content.
-const MOBILE_LINKS = [
-  { href: "/", label: "Обзор", icon: HomeIcon },
-  { href: "/transactions", label: "Записи", icon: ListIcon },
-  null,
-  { href: "/table", label: "Таблица", icon: Table2Icon },
-  { href: "/settings", label: "Ещё", icon: EllipsisIcon, also: ["/categories"] },
-]
-
-function isActive(pathname: string, href: string, also: string[] = []) {
-  if (href === "/") return pathname === "/"
-  return [href, ...also].some((h) => pathname.startsWith(h))
-}
 
 export function DesktopNav() {
   const pathname = usePathname()
   return (
     <nav aria-label="Разделы" className="hidden items-center gap-1 md:flex">
-      {DESKTOP_LINKS.map((l) => (
+      {LINKS.map((l) => (
         <Link
           key={l.href}
           href={l.href}
-          aria-current={isActive(pathname, l.href) ? "page" : undefined}
+          aria-current={l.match(pathname) ? "page" : undefined}
           className={cn(
             "rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-foreground",
-            isActive(pathname, l.href) && "bg-accent font-medium text-foreground",
+            l.match(pathname) && "bg-accent font-medium text-foreground",
           )}
         >
           {l.label}
@@ -53,30 +48,29 @@ export function DesktopNav() {
 
 export function MobileNav() {
   const pathname = usePathname()
+  const [spent, reports] = LINKS
+  const tab = (l: (typeof LINKS)[number]) => (
+    <Link
+      href={l.href}
+      aria-current={l.match(pathname) ? "page" : undefined}
+      className={cn(
+        "flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs text-muted-foreground transition-colors duration-200",
+        l.match(pathname) && "font-medium text-primary",
+      )}
+    >
+      <l.icon className="size-6" aria-hidden />
+      {l.label}
+    </Link>
+  )
   return (
     <nav
       aria-label="Разделы"
       className="fixed inset-x-0 bottom-0 z-30 border-t bg-background pb-[env(safe-area-inset-bottom)] md:hidden"
     >
-      <div className="grid grid-cols-5">
-        {MOBILE_LINKS.map((l) => {
-          if (!l) return <AddTransactionTab key="add" />
-          const active = isActive(pathname, l.href, l.also)
-          return (
-            <Link
-              key={l.href}
-              href={l.href}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs text-muted-foreground transition-colors duration-200",
-                active && "font-medium text-primary",
-              )}
-            >
-              <l.icon className="size-6" aria-hidden />
-              {l.label}
-            </Link>
-          )
-        })}
+      <div className="grid grid-cols-3">
+        {tab(spent)}
+        <AddTransactionTab />
+        {tab(reports)}
       </div>
     </nav>
   )

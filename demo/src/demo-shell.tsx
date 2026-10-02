@@ -1,69 +1,52 @@
 "use client"
 
-import { RotateCcwIcon, WalletIcon } from "lucide-react"
+import { WalletIcon } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 
+import { AccountMenu } from "@/components/account-menu"
 import { AddTransactionButton, AddTransactionProvider } from "@/components/add-transaction"
 import { DesktopNav, MobileNav } from "@/components/app-nav"
 import { NavigationTracker } from "@/components/back-button"
-import { MemberAvatars } from "@/components/member-avatars"
-import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
-import { listCategories, resetDemo, update, useDemo } from "./store"
+import { listCategories, update, useDemo } from "./store"
 
+// One quiet line: the demo has no login, so this switch shows the partner's view.
 function DemoBar() {
   const s = useDemo()
   if (!s) return null
   return (
     <div className="border-b bg-accent">
-      <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 text-sm">
-        <p className="flex-1 basis-full sm:basis-auto">
-          <span className="font-medium">Демо.</span>{" "}
-          <span className="text-muted-foreground">Данные хранятся только в этом браузере.</span>
-        </p>
-        <div className="flex items-center gap-2">
-          <span id="demo-user" className="text-muted-foreground">
-            Вы:
-          </span>
-          <ToggleGroup
-            type="single"
-            variant="outline"
-            size="sm"
-            value={s.currentUserId}
-            onValueChange={(v) => {
-              if (!v) return
-              update((d) => {
-                d.currentUserId = v
-              })
-              toast(`Теперь вы — ${s.members.find((m) => m.id === v)?.name}`)
-            }}
-            aria-labelledby="demo-user"
-          >
-            {s.members.map((m) => (
-              <ToggleGroupItem
-                key={m.id}
-                value={m.id}
-                className="h-11 px-3 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground md:h-8"
-              >
-                {m.name}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              resetDemo()
-              toast.success("Демо сброшено")
-            }}
-          >
-            <RotateCcwIcon aria-hidden />
-            Сбросить
-          </Button>
-        </div>
+      <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-1.5 text-sm">
+        <span className="text-muted-foreground">
+          <span className="font-medium text-foreground">Демо</span> · вы:
+        </span>
+        <ToggleGroup
+          type="single"
+          size="sm"
+          value={s.currentUserId}
+          onValueChange={(v) => {
+            if (!v) return
+            update((d) => {
+              d.currentUserId = v
+            })
+            toast(`Теперь вы — ${s.members.find((m) => m.id === v)?.name}`)
+          }}
+          aria-label="Чьими глазами смотреть"
+          className="mr-auto"
+        >
+          {s.members.map((m) => (
+            <ToggleGroupItem
+              key={m.id}
+              value={m.id}
+              className="h-11 rounded-full px-3 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground md:h-8"
+            >
+              {m.name}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
       </div>
     </div>
   )
@@ -85,11 +68,7 @@ export function DemoShell({ children }: { children: React.ReactNode }) {
           </Link>
           <DesktopNav />
           <div className="ml-auto flex items-center gap-3">
-            {s && (
-              <Link href="/settings" aria-label="Участники бюджета" className="flex min-h-11 items-center">
-                <MemberAvatars members={s.members} />
-              </Link>
-            )}
+            {s && <AccountMenu members={s.members} budgetName={s.budget.name} />}
             {s && <AddTransactionButton className="hidden md:inline-flex" />}
           </div>
         </div>

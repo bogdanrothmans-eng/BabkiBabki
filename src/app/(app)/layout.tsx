@@ -1,10 +1,11 @@
 import { WalletIcon } from "lucide-react"
 import Link from "next/link"
 
+import { AccountMenu } from "@/components/account-menu"
 import { AddTransactionButton, AddTransactionProvider } from "@/components/add-transaction"
 import { DesktopNav, MobileNav } from "@/components/app-nav"
 import { NavigationTracker } from "@/components/back-button"
-import { MemberAvatars } from "@/components/member-avatars"
+import { logout } from "@/lib/actions/auth"
 import { requireContext } from "@/lib/auth"
 import { listCategories } from "@/lib/queries"
 
@@ -32,9 +33,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </Link>
             <DesktopNav />
             <div className="ml-auto flex items-center gap-3">
-              <Link href="/settings" aria-label="Участники бюджета" className="flex min-h-11 items-center">
-                <MemberAvatars members={members} />
-              </Link>
+              <AccountMenu
+                members={members.map((m) => ({ id: m.id, name: m.name }))}
+                budgetName={budget.name}
+                logout={logout}
+              />
               <AddTransactionButton className="hidden md:inline-flex" />
             </div>
           </div>

@@ -13,10 +13,12 @@ export default function TransactionsPage() {
   const params = useSearchParams()
   const period = parsePeriod(params.get("p") ?? undefined)
   if (!s) return null
+  const filter = parseFilter((key) => params.get(key))
   return (
     <TransactionsView
       period={period}
-      rows={listTransactions(s, period, parseFilter((key) => params.get(key)))}
+      filter={filter}
+      rows={listTransactions(s, period, filter)}
       categories={listCategories(s, { includeArchived: true })}
       members={s.members.map((m) => ({ id: m.id, name: m.name }))}
     />

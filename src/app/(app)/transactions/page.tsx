@@ -13,10 +13,12 @@ export default async function TransactionsPage({ searchParams }: PageProps<"/tra
   const get = (key: string) => (typeof params[key] === "string" ? (params[key] as string) : undefined)
   const period = parsePeriod(get("p"))
   const { budget, members } = await requireContext()
+  const filter = parseFilter(get)
   return (
     <TransactionsView
       period={period}
-      rows={listTransactions(budget.id, period, parseFilter(get))}
+      filter={filter}
+      rows={listTransactions(budget.id, period, filter)}
       categories={listCategories(budget.id, { includeArchived: true })}
       members={members.map((m) => ({ id: m.id, name: m.name }))}
     />

@@ -5,7 +5,7 @@ import { requireContext } from "@/lib/auth"
 import { parsePeriod } from "@/lib/period"
 import { getSummary, listTransactions } from "@/lib/queries"
 
-export const metadata: Metadata = { title: "Обзор" }
+export const metadata: Metadata = { title: "Траты" }
 
 export default async function OverviewPage({ searchParams }: PageProps<"/">) {
   const { p } = await searchParams
@@ -15,7 +15,7 @@ export default async function OverviewPage({ searchParams }: PageProps<"/">) {
     <OverviewView
       period={period}
       summary={getSummary(budget.id, period)}
-      recent={listTransactions(budget.id, period, { limit: 8 })}
+      rows={listTransactions(budget.id, period)}
       memberCount={members.length}
     />
   )

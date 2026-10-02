@@ -52,6 +52,11 @@ test("a couple shares one budget", async ({ page, browser }, info) => {
       : page.getByRole("row", { name: /Итог месяца/ })
   await expect(total).toContainText("55 692")
 
+  // Reports drill down into one category.
+  await page.goto("/reports?p=2026-01")
+  await page.getByRole("link", { name: /Продукты питания/ }).click()
+  await expect(page.getByRole("heading", { name: "Продукты питания" })).toBeVisible()
+
   // Invite the partner: the overview nudges a single-member budget to do it.
   await page.context().grantPermissions(["clipboard-read", "clipboard-write"])
   await page.goto("/")
@@ -70,8 +75,8 @@ test("a couple shares one budget", async ({ page, browser }, info) => {
   await openAddDialog(partner)
   await partner.getByLabel("Сумма").fill("1250")
   await expect(partner.getByLabel("Сумма")).toHaveValue("1 250")
-  await partner.getByRole("button", { name: /Все категории/ }).click()
   await partner.getByRole("button", { name: /Продукты питания/ }).click()
+  await partner.getByRole("button", { name: "Комментарий" }).click()
   await partner.getByLabel("Комментарий").fill("Пятёрочка на неделю")
   await partner.locator('input[type="file"]').setInputFiles({ name: "check.png", mimeType: "image/png", buffer: PNG })
   await partner.getByRole("button", { name: /Добавить 1\s250/ }).click()
@@ -133,6 +138,16 @@ test("categories get a vector icon and colour", async ({ page }, info) => {
   await expect(page.getByRole("alertdialog")).toContainText("Записей в ней нет")
   await page.getByRole("button", { name: "Удалить", exact: true }).click()
   await expect(page.getByRole("button", { name: "Изменить «Цветы»" })).toHaveCount(0)
+})
+
+test("secondary pages sit in the account menu", async ({ page }, info) => {
+  await register(page, "Ира", `ira-${Date.now()}-${info.project.name}@example.com`)
+  await page.getByRole("button", { name: /Меню/ }).click()
+  await page.getByRole("menuitem", { name: "Категории" }).click()
+  await expect(page.getByRole("heading", { name: "Категории" })).toBeVisible()
+  await page.getByRole("button", { name: /Меню/ }).click()
+  await page.getByRole("menuitem", { name: "Выйти" }).click()
+  await expect(page).toHaveURL(/\/login/)
 })
 
 test("period picker switches months and years", async ({ page }, info) => {
