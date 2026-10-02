@@ -8,7 +8,8 @@ export type Kind = "expense" | "income"
 export type Category = {
   id: string
   name: string
-  emoji: string
+  icon: string
+  color: string
   kind: Kind
   sort: number
   archived: number
@@ -18,7 +19,7 @@ export type Category = {
 export function listCategories(budgetId: string, opts: { includeArchived?: boolean } = {}) {
   return db
     .prepare(
-      `SELECT c.id, c.name, c.emoji, c.kind, c.sort, c.archived,
+      `SELECT c.id, c.name, c.icon, c.color, c.kind, c.sort, c.archived,
               (SELECT COUNT(*) FROM transactions t WHERE t.category_id = c.id) AS used
        FROM categories c
        WHERE c.budget_id = ? ${opts.includeArchived ? "" : "AND c.archived = 0"}
@@ -36,7 +37,8 @@ export type TransactionRow = {
   source: string
   category_id: string
   category_name: string
-  category_emoji: string
+  category_icon: string
+  category_color: string
   member_id: string | null
   member_name: string | null
   comments: number
@@ -45,7 +47,7 @@ export type TransactionRow = {
 
 const TRANSACTION_SELECT = `
   SELECT t.id, t.kind, t.amount, t.date, t.note, t.source, t.category_id,
-         c.name AS category_name, c.emoji AS category_emoji,
+         c.name AS category_name, c.icon AS category_icon, c.color AS category_color,
          t.member_id, u.name AS member_name,
          (SELECT COUNT(*) FROM comments x WHERE x.transaction_id = t.id) AS comments,
          (SELECT COUNT(*) FROM attachments a WHERE a.transaction_id = t.id) AS photos
@@ -104,7 +106,8 @@ function totals(budgetId: string, period: Period) {
 export type Breakdown = {
   category_id: string
   name: string
-  emoji: string
+  icon: string
+  color: string
   total: number
   count: number
 }
@@ -115,7 +118,7 @@ export function getSummary(budgetId: string, period: Period) {
   const byCategory = (kind: Kind) =>
     db
       .prepare(
-        `SELECT c.id AS category_id, c.name, c.emoji, SUM(t.amount) AS total, COUNT(*) AS count
+        `SELECT c.id AS category_id, c.name, c.icon, c.color, SUM(t.amount) AS total, COUNT(*) AS count
          FROM transactions t JOIN categories c ON c.id = t.category_id
          WHERE t.budget_id = ? AND t.kind = ? AND t.date BETWEEN ? AND ?
          GROUP BY c.id ORDER BY total DESC`,
@@ -164,7 +167,7 @@ export function getTransaction(budgetId: string, transactionId: string) {
   return { ...row, comments, attachments }
 }
 
-export type PivotRow = { id: string; name: string; emoji: string; kind: Kind; months: number[]; total: number }
+export type PivotRow = { id: string; name: string; icon: string; color: string; kind: Kind; months: number[]; total: number }
 
 // Same shape as the couple's spreadsheet: categories down, months across.
 export function getYearPivot(budgetId: string, year: number) {
@@ -180,7 +183,7 @@ export function getYearPivot(budgetId: string, year: number) {
   const archived = new Set(categories.filter((c) => c.archived).map((c) => c.id))
   const rows = new Map<string, PivotRow>()
   for (const c of categories) {
-    rows.set(c.id, { id: c.id, name: c.name, emoji: c.emoji, kind: c.kind, months: Array(12).fill(0), total: 0 })
+    rows.set(c.id, { id: c.id, name: c.name, icon: c.icon, color: c.color, kind: c.kind, months: Array(12).fill(0), total: 0 })
   }
   for (const cell of cells) {
     const row = rows.get(cell.category_id)

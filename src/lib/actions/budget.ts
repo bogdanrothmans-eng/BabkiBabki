@@ -7,35 +7,46 @@ import { z } from "zod"
 import { requireContext } from "../auth"
 import { db, id } from "../db"
 import { importSheet, type ImportResult } from "../import"
-import { guessEmoji } from "../sheet-import"
+import { CATEGORY_COLORS, CATEGORY_ICONS, guessCategoryStyle } from "../category-style"
 
 const INVITE_DAYS = 7
 
-export type CategoryResult = { ok: true } | { ok: false; error: string } | undefined
+export type CategoryResult = { ok: true } | { ok: false; error: string; field?: "name" } | undefined
 
 const category = z.object({
   name: z.string().trim().min(1, "Назовите категорию").max(60, "Слишком длинное название"),
-  emoji: z.string().trim().max(16).optional(),
+  icon: z.enum(CATEGORY_ICONS).optional(),
+  color: z.enum(CATEGORY_COLORS).optional(),
   kind: z.enum(["expense", "income"]),
 })
 
 export async function createCategory(_: CategoryResult, form: FormData): Promise<CategoryResult> {
   const { budget } = await requireContext()
-  const parsed = category.safeParse(Object.fromEntries(form))
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message }
+  const parsed = category.safeParse({
+    name: form.get("name") ?? "",
+    icon: form.get("icon") || undefined,
+    color: form.get("color") || undefined,
+    kind: form.get("kind"),
+  })
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message, field: "name" }
   const { name, kind } = parsed.data
-  const exists = db
-    .prepare("SELECT 1 FROM categories WHERE budget_id = ? AND kind = ? AND lower(name) = lower(?) AND archived = 0")
-    .get(budget.id, kind, name)
-  if (exists) return { ok: false, error: "Такая категория уже есть" }
+  // SQLite lower() is ASCII-only, so compare Cyrillic names in JS.
+  const taken = (
+    db.prepare("SELECT name FROM categories WHERE budget_id = ? AND kind = ? AND archived = 0").all(budget.id, kind) as {
+      name: string
+    }[]
+  ).some((c) => c.name.toLocaleLowerCase("ru") === name.toLocaleLowerCase("ru"))
+  if (taken) return { ok: false, error: "Такая категория уже есть", field: "name" }
+  const guess = guessCategoryStyle(name, kind)
   const { next } = db
     .prepare("SELECT COALESCE(MAX(sort), -1) + 1 AS next FROM categories WHERE budget_id = ? AND kind = ?")
     .get(budget.id, kind) as { next: number }
-  db.prepare("INSERT INTO categories (id, budget_id, name, emoji, kind, sort) VALUES (?, ?, ?, ?, ?, ?)").run(
+  db.prepare("INSERT INTO categories (id, budget_id, name, icon, color, kind, sort) VALUES (?, ?, ?, ?, ?, ?, ?)").run(
     id(),
     budget.id,
     name,
-    parsed.data.emoji || guessEmoji(name, kind),
+    parsed.data.icon ?? guess.icon,
+    parsed.data.color ?? guess.color,
     kind,
     next,
   )
@@ -43,13 +54,17 @@ export async function createCategory(_: CategoryResult, form: FormData): Promise
   return { ok: true }
 }
 
-export async function updateCategory(categoryId: string, name: string, emoji: string): Promise<CategoryResult> {
+export async function updateCategory(
+  categoryId: string,
+  values: { name: string; icon: string; color: string },
+): Promise<CategoryResult> {
   const { budget } = await requireContext()
-  const parsed = category.pick({ name: true, emoji: true }).safeParse({ name, emoji })
-  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message }
-  db.prepare("UPDATE categories SET name = ?, emoji = COALESCE(NULLIF(?, ''), emoji) WHERE id = ? AND budget_id = ?").run(
+  const parsed = category.pick({ name: true, icon: true, color: true }).required().safeParse(values)
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message, field: "name" }
+  db.prepare("UPDATE categories SET name = ?, icon = ?, color = ? WHERE id = ? AND budget_id = ?").run(
     parsed.data.name,
-    parsed.data.emoji ?? "",
+    parsed.data.icon,
+    parsed.data.color,
     categoryId,
     budget.id,
   )

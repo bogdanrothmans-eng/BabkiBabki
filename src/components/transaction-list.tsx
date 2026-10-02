@@ -1,6 +1,7 @@
 import { ImageIcon, MessageCircleIcon } from "lucide-react"
 import Link from "next/link"
 
+import { CategoryIcon } from "@/components/category-icon"
 import { MemberAvatar } from "@/components/member-avatars"
 import { formatMoney } from "@/lib/money"
 import { relativeDayLabel } from "@/lib/period"
@@ -17,33 +18,31 @@ export function TransactionList({ rows, showMembers }: { rows: TransactionRow[];
         const spent = items.filter((i) => i.kind === "expense").reduce((s, i) => s + i.amount, 0)
         return (
           <section key={date}>
-            <h3 className="mb-1 flex items-baseline justify-between px-1 text-xs font-medium text-muted-foreground">
+            <h3 className="mb-1.5 flex items-baseline justify-between px-1 text-sm font-medium text-muted-foreground md:text-xs">
               <span>{relativeDayLabel(date)}</span>
               {spent > 0 && <span className="tabular">{formatMoney(spent)}</span>}
             </h3>
-            <ul className="divide-y rounded-xl border bg-card">
+            <ul className="divide-y overflow-hidden rounded-xl border bg-card">
               {items.map((t) => (
                 <li key={t.id}>
                   <Link
                     href={`/transactions/${t.id}`}
-                    className="flex items-center gap-3 px-3 py-3 transition-colors hover:bg-accent/60 first:rounded-t-xl last:rounded-b-xl"
+                    className="flex min-h-16 items-center gap-3 px-3 py-2.5 transition-colors duration-150 hover:bg-accent/60 active:bg-accent focus-visible:relative focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
                   >
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-lg">
-                      {t.category_emoji}
-                    </span>
+                    <CategoryIcon icon={t.category_icon} color={t.category_color} />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-medium">{t.category_name}</span>
-                      <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="block truncate text-base font-medium md:text-sm">{t.category_name}</span>
+                      <span className="flex items-center gap-2 text-sm text-muted-foreground md:text-xs">
                         {t.note && <span className="truncate">{t.note}</span>}
                         {t.comments > 0 && (
                           <span className="flex shrink-0 items-center gap-0.5" aria-label={`Комментариев: ${t.comments}`}>
-                            <MessageCircleIcon className="size-3" />
+                            <MessageCircleIcon className="size-3.5" aria-hidden />
                             {t.comments}
                           </span>
                         )}
                         {t.photos > 0 && (
                           <span className="flex shrink-0 items-center gap-0.5" aria-label={`Фото: ${t.photos}`}>
-                            <ImageIcon className="size-3" />
+                            <ImageIcon className="size-3.5" aria-hidden />
                             {t.photos}
                           </span>
                         )}
@@ -52,7 +51,7 @@ export function TransactionList({ rows, showMembers }: { rows: TransactionRow[];
                     {showMembers && t.member_name && <MemberAvatar name={t.member_name} className="size-6 border-0" />}
                     <span
                       className={cn(
-                        "tabular shrink-0 text-right text-sm font-semibold",
+                        "tabular shrink-0 text-right text-base font-semibold md:text-sm",
                         t.kind === "income" && "text-income",
                       )}
                     >

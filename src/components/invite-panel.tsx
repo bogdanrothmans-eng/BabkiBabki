@@ -1,80 +1,75 @@
 "use client"
 
 import { CopyIcon, LinkIcon, Share2Icon, XIcon } from "lucide-react"
-import { useState, useTransition } from "react"
+import { useTransition } from "react"
 import { toast } from "sonner"
 
+import { shareInvite } from "@/components/invite-banner"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Spinner } from "@/components/ui/spinner"
 import { createInvite, revokeInvite } from "@/lib/actions/budget"
 import { formatDay } from "@/lib/period"
 
+// Pending invites sit in the member list (Monarch), sharing goes through the
+// system share sheet on phones and the clipboard elsewhere (DoorDash, Splitwise).
 export function InvitePanel({ invites }: { invites: { token: string; expires_at: string }[] }) {
   const [pending, startTransition] = useTransition()
-  const [fresh, setFresh] = useState<string | null>(null)
-  const link = (token: string) => `${window.location.origin}/invite/${token}`
 
   async function copy(token: string) {
-    await navigator.clipboard.writeText(link(token))
+    await navigator.clipboard.writeText(`${window.location.origin}/invite/${token}`)
     toast.success("Ссылка скопирована")
   }
 
-  async function share(token: string) {
-    if (navigator.share) {
-      await navigator.share({ title: "Бабки", text: "Присоединяйся к нашему бюджету", url: link(token) }).catch(() => {})
-    } else await copy(token)
-  }
-
   return (
-    <div className="flex flex-col gap-3">
-      <Button
-        variant="outline"
-        className="self-start"
-        disabled={pending}
-        onClick={() =>
-          startTransition(async () => {
-            const token = await createInvite()
-            setFresh(token)
-          })
-        }
-      >
-        <LinkIcon />
-        Пригласить по ссылке
-      </Button>
-      {invites.length > 0 && (
-        <ul className="flex flex-col gap-2">
-          {invites.map((i) => (
-            <li key={i.token} className="flex flex-col gap-1">
-              <div className="flex gap-2">
-                <Input
-                  readOnly
-                  value={typeof window === "undefined" ? `/invite/${i.token}` : link(i.token)}
-                  onFocus={(e) => e.target.select()}
-                  className={fresh === i.token ? "border-primary" : undefined}
-                  aria-label="Ссылка-приглашение"
-                />
-                <Button variant="outline" size="icon" aria-label="Скопировать" onClick={() => copy(i.token)}>
-                  <CopyIcon />
-                </Button>
-                <Button variant="outline" size="icon" aria-label="Поделиться" onClick={() => share(i.token)}>
-                  <Share2Icon />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Отозвать ссылку"
-                  onClick={() => startTransition(() => revokeInvite(i.token))}
-                >
-                  <XIcon />
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Одноразовая, действует до {formatDay(i.expires_at.slice(0, 10))}
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    <>
+      {invites.map((i) => (
+        <li key={i.token} className="flex min-h-16 items-center gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-dashed text-muted-foreground">
+            <LinkIcon className="size-4" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-base md:text-sm">Ожидает приглашённого</p>
+            <p className="text-sm text-muted-foreground md:text-xs">
+              Одноразовая ссылка, действует до {formatDay(i.expires_at.slice(0, 10))}
+            </p>
+          </div>
+          <Button variant="ghost" size="icon" aria-label="Поделиться ссылкой" onClick={() => shareInvite(i.token)}>
+            <Share2Icon aria-hidden />
+          </Button>
+          <Button variant="ghost" size="icon" aria-label="Скопировать ссылку" onClick={() => copy(i.token)}>
+            <CopyIcon aria-hidden />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Отозвать приглашение"
+            onClick={() =>
+              startTransition(async () => {
+                await revokeInvite(i.token)
+                toast.success("Приглашение отозвано")
+              })
+            }
+          >
+            <XIcon aria-hidden />
+          </Button>
+        </li>
+      ))}
+      <li className="pt-1">
+        <Button
+          variant={invites.length ? "outline" : "default"}
+          className="w-full sm:w-auto"
+          disabled={pending}
+          onClick={() =>
+            startTransition(async () => {
+              const token = await createInvite()
+              await shareInvite(token)
+            })
+          }
+        >
+          {pending ? <Spinner /> : <Share2Icon aria-hidden />}
+          {invites.length ? "Новая ссылка-приглашение" : "Пригласить по ссылке"}
+        </Button>
+      </li>
+    </>
   )
 }

@@ -14,7 +14,7 @@ export function TransactionFilters({
   categories,
   members,
 }: {
-  categories: { id: string; name: string; emoji: string; kind: string }[]
+  categories: { id: string; name: string; kind: string }[]
   members: { id: string; name: string }[]
 }) {
   const params = useSearchParams()
@@ -42,7 +42,7 @@ export function TransactionFilters({
   return (
     <div className="flex flex-col gap-2 md:flex-row md:items-center">
       <Tabs value={kind} onValueChange={(v) => update("kind", v)}>
-        <TabsList>
+        <TabsList className="w-full md:w-fit">
           <TabsTrigger value={ALL}>Все</TabsTrigger>
           <TabsTrigger value="expense">Расходы</TabsTrigger>
           <TabsTrigger value="income">Доходы</TabsTrigger>
@@ -57,7 +57,7 @@ export function TransactionFilters({
             <SelectItem value={ALL}>Все категории</SelectItem>
             {visible.map((c) => (
               <SelectItem key={c.id} value={c.id}>
-                {c.emoji} {c.name}
+                {c.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -77,14 +77,16 @@ export function TransactionFilters({
             </SelectContent>
           </Select>
         )}
-        <div className="relative col-span-2 md:ml-auto md:w-56">
-          <SearchIcon className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative col-span-2 md:ml-auto md:w-72">
+          <SearchIcon aria-hidden className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Поиск по комментарию"
-            className="pl-8"
+            aria-label="Поиск по комментарию и категории"
+            className="pl-9"
             type="search"
+            enterKeyHint="search"
           />
         </div>
       </div>

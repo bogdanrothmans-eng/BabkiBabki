@@ -1,13 +1,22 @@
 "use client"
 
 import { PlusIcon } from "lucide-react"
-import { useState } from "react"
+import { createContext, useContext, useState } from "react"
 
 import { ResponsiveDialog } from "@/components/responsive-dialog"
 import { type CategoryOption, type MemberOption, TransactionForm } from "@/components/transaction-form"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
-export function AddTransaction(props: {
+const AddTransactionContext = createContext<() => void>(() => {})
+
+// One form instance for the whole app shell: opened from the desktop header
+// button and from the "+" in the middle of the mobile tab bar.
+export function AddTransactionProvider({
+  children,
+  ...props
+}: {
+  children: React.ReactNode
   categories: CategoryOption[]
   members: MemberOption[]
   currentUserId: string
@@ -22,22 +31,41 @@ export function AddTransaction(props: {
   }
 
   return (
-    <>
-      <Button onClick={show} className="hidden md:inline-flex">
-        <PlusIcon />
-        Добавить
-      </Button>
-      <Button
-        onClick={show}
-        size="icon-lg"
-        aria-label="Добавить запись"
-        className="fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-40 size-14 rounded-full shadow-lg md:hidden [&_svg:not([class*='size-'])]:size-6"
-      >
-        <PlusIcon />
-      </Button>
+    <AddTransactionContext value={show}>
+      {children}
       <ResponsiveDialog open={open} onOpenChange={setOpen} title="Новая запись">
         <TransactionForm key={round} {...props} onSaved={() => setOpen(false)} />
       </ResponsiveDialog>
-    </>
+    </AddTransactionContext>
+  )
+}
+
+export function AddTransactionButton({ className }: { className?: string }) {
+  const show = useContext(AddTransactionContext)
+  return (
+    <Button onClick={show} className={className}>
+      <PlusIcon aria-hidden />
+      Добавить
+    </Button>
+  )
+}
+
+export function AddTransactionTab({ className }: { className?: string }) {
+  const show = useContext(AddTransactionContext)
+  return (
+    <button
+      type="button"
+      onClick={show}
+      aria-label="Добавить запись"
+      className={cn(
+        "flex flex-col items-center justify-center py-1.5 focus-visible:outline-none",
+        "[&>span]:focus-visible:ring-[3px] [&>span]:focus-visible:ring-ring/50",
+        className,
+      )}
+    >
+      <span className="flex size-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform active:scale-95">
+        <PlusIcon className="size-6" aria-hidden />
+      </span>
+    </button>
   )
 }

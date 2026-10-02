@@ -4,6 +4,8 @@ import fs from "node:fs"
 import path from "node:path"
 import { DatabaseSync, type SQLInputValue } from "node:sqlite"
 
+import { guessCategoryStyle } from "./category-style"
+
 export const DATA_DIR = process.env.DATA_DIR ?? path.join(process.cwd(), "data")
 export const UPLOADS_DIR = path.join(DATA_DIR, "uploads")
 
@@ -54,7 +56,8 @@ CREATE TABLE IF NOT EXISTS categories (
   id TEXT PRIMARY KEY,
   budget_id TEXT NOT NULL REFERENCES budgets(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
-  emoji TEXT NOT NULL DEFAULT '💸',
+  icon TEXT NOT NULL DEFAULT 'circle-ellipsis',
+  color TEXT NOT NULL DEFAULT 'slate',
   kind TEXT NOT NULL CHECK (kind IN ('expense', 'income')),
   sort INTEGER NOT NULL DEFAULT 0,
   archived INTEGER NOT NULL DEFAULT 0,
@@ -103,10 +106,37 @@ const globalForDb = globalThis as unknown as { babkiDb?: DatabaseSync }
 
 type Row = Record<string, unknown>
 
+// v1 stored an emoji per category; v2 stores a Lucide icon key and a color token.
+function migrate(db: DatabaseSync) {
+  const columns = db.prepare("PRAGMA table_info(categories)").all() as { name: string }[]
+  if (!columns.some((c) => c.name === "emoji")) return
+  db.exec("BEGIN")
+  try {
+    db.exec("ALTER TABLE categories ADD COLUMN icon TEXT NOT NULL DEFAULT 'circle-ellipsis'")
+    db.exec("ALTER TABLE categories ADD COLUMN color TEXT NOT NULL DEFAULT 'slate'")
+    const rows = db.prepare("SELECT id, name, kind FROM categories").all() as {
+      id: string
+      name: string
+      kind: "expense" | "income"
+    }[]
+    const update = db.prepare("UPDATE categories SET icon = ?, color = ? WHERE id = ?")
+    for (const r of rows) {
+      const style = guessCategoryStyle(r.name, r.kind)
+      update.run(style.icon, style.color, r.id)
+    }
+    db.exec("ALTER TABLE categories DROP COLUMN emoji")
+    db.exec("COMMIT")
+  } catch (error) {
+    db.exec("ROLLBACK")
+    throw error
+  }
+}
+
 function open() {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true })
   const db = new DatabaseSync(path.join(DATA_DIR, "babki.db"))
   db.exec(SCHEMA)
+  migrate(db)
   // node:sqlite returns null-prototype rows, which React refuses to pass to
   // Client Components. Hand out plain objects everywhere instead.
   const prepare = db.prepare.bind(db)

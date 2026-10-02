@@ -1,8 +1,9 @@
 import "server-only"
 
+import { guessCategoryStyle } from "./category-style"
 import { db, id, transaction } from "./db"
 import { listCategories } from "./queries"
-import { guessEmoji, matchCategory, parseSheet, type SheetIssue } from "./sheet-import"
+import { matchCategory, parseSheet, type SheetIssue } from "./sheet-import"
 
 export type ImportResult = {
   imported: number
@@ -27,7 +28,7 @@ export function importSheet(budgetId: string, userId: string, text: string, year
 
     const resolved = new Map<string, { categoryId: string; note: string }>()
     const insertCategory = db.prepare(
-      "INSERT INTO categories (id, budget_id, name, emoji, kind, sort) VALUES (?, ?, ?, ?, 'expense', ?)",
+      "INSERT INTO categories (id, budget_id, name, icon, color, kind, sort) VALUES (?, ?, ?, ?, ?, 'expense', ?)",
     )
     for (const name of sheet.categories) {
       const match = matchCategory(name, [...byName.keys()])
@@ -36,7 +37,8 @@ export function importSheet(budgetId: string, userId: string, text: string, year
         continue
       }
       const categoryId = id()
-      insertCategory.run(categoryId, budgetId, name, guessEmoji(name), byName.size)
+      const style = guessCategoryStyle(name)
+      insertCategory.run(categoryId, budgetId, name, style.icon, style.color, byName.size)
       byName.set(name, categoryId)
       createdCategories.push(name)
       resolved.set(name, { categoryId, note: "" })

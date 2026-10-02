@@ -31,9 +31,10 @@ export default async function TransactionsPage({ searchParams }: PageProps<"/tra
 
   return (
     <div className="flex flex-col gap-4">
+      <h1 className="sr-only">Записи</h1>
       <div className="flex flex-col items-center gap-3 md:flex-row md:justify-between">
         <PeriodPicker period={period} />
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground" aria-live="polite">
           {rows.length} {plural(rows.length, ["запись", "записи", "записей"])}
           {expense > 0 && (
             <>

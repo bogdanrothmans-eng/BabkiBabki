@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 
 import { CategoryBreakdown } from "@/components/category-breakdown"
+import { InviteBanner } from "@/components/invite-banner"
 import { MemberAvatar } from "@/components/member-avatars"
 import { PeriodPicker } from "@/components/period-picker"
 import { TransactionList } from "@/components/transaction-list"
@@ -36,15 +37,18 @@ export default async function OverviewPage({ searchParams }: PageProps<"/">) {
 
   return (
     <div className="flex flex-col gap-4 md:gap-6">
+      <h1 className="sr-only">Обзор</h1>
       <div className="flex justify-center md:justify-start">
         <PeriodPicker period={period} />
       </div>
+
+      {members.length === 1 && <InviteBanner />}
 
       <section aria-labelledby="total-label" className="rounded-2xl border bg-card px-5 py-6 md:px-8 md:py-8">
         <p id="total-label" className="text-sm text-muted-foreground">
           Потрачено {periodPreposition(period)}
         </p>
-        <p className="mt-1 text-5xl font-semibold tracking-tight md:text-6xl">{formatMoney(summary.expense)}</p>
+        <p className="mt-1 text-5xl leading-tight font-semibold tracking-tight md:text-6xl">{formatMoney(summary.expense)}</p>
         <p className="mt-2 text-sm text-muted-foreground">
           {comparison(summary.expense, summary.previousExpense, period) ??
             `${summary.count} ${plural(summary.count, ["запись", "записи", "записей"])}`}
@@ -82,7 +86,7 @@ export default async function OverviewPage({ searchParams }: PageProps<"/">) {
         <Empty className="border">
           <EmptyHeader>
             <EmptyMedia variant="icon">
-              <FileSpreadsheetIcon />
+              <FileSpreadsheetIcon aria-hidden />
             </EmptyMedia>
             <EmptyTitle>За этот период записей нет</EmptyTitle>
             <EmptyDescription>
@@ -96,10 +100,12 @@ export default async function OverviewPage({ searchParams }: PageProps<"/">) {
           </EmptyContent>
         </Empty>
       ) : (
-        <div className="grid gap-4 md:grid-cols-[1.1fr_1fr] md:gap-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1.1fr_1fr] md:gap-6">
           <Card className="gap-4">
             <CardHeader>
-              <CardTitle>По категориям</CardTitle>
+              <CardTitle>
+                <h2>По категориям</h2>
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {summary.expenses.length ? (
@@ -109,7 +115,7 @@ export default async function OverviewPage({ searchParams }: PageProps<"/">) {
               )}
               {summary.incomes.length > 0 && (
                 <>
-                  <h3 className="mt-6 mb-2 text-sm font-medium">Доходы</h3>
+                  <h3 className="mt-6 mb-2 font-medium">Доходы</h3>
                   <CategoryBreakdown items={summary.incomes} total={summary.income} periodKey={period.key} />
                 </>
               )}
@@ -121,8 +127,8 @@ export default async function OverviewPage({ searchParams }: PageProps<"/">) {
               <h2 className="font-semibold">Последние записи</h2>
               <Button asChild variant="ghost" size="sm">
                 <Link href={`/transactions?p=${period.key}`}>
-                  Все
-                  <ArrowRightIcon />
+                  Все записи
+                  <ArrowRightIcon aria-hidden />
                 </Link>
               </Button>
             </div>

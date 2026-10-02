@@ -4,7 +4,19 @@ import { SendIcon, XIcon } from "lucide-react"
 import { useRef, useState, useTransition } from "react"
 
 import { MemberAvatar } from "@/components/member-avatars"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
+import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
 import { addComment, deleteComment } from "@/lib/actions/transactions"
 import type { Comment } from "@/lib/queries"
@@ -48,18 +60,31 @@ export function CommentThread({
                   <span className="font-medium text-foreground">{c.user_name ?? "Удалённый участник"}</span>
                   <span suppressHydrationWarning>{when(c.created_at)}</span>
                 </div>
-                <p className="mt-0.5 text-sm break-words whitespace-pre-wrap">{c.body}</p>
+                <p className="mt-0.5 text-base break-words whitespace-pre-wrap md:text-sm">{c.body}</p>
               </div>
               {c.user_id === currentUserId && (
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label="Удалить комментарий"
-                  className="self-center opacity-60 hover:opacity-100"
-                  onClick={() => startTransition(() => deleteComment(c.id))}
-                >
-                  <XIcon />
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon-sm" aria-label="Удалить комментарий" className="self-center text-muted-foreground">
+                      <XIcon aria-hidden />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Удалить комментарий?</AlertDialogTitle>
+                      <AlertDialogDescription>«{c.body.slice(0, 80)}» исчезнет для всех участников.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Отмена</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive text-white hover:bg-destructive/90"
+                        onClick={() => startTransition(() => deleteComment(c.id))}
+                      >
+                        Удалить
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
             </li>
           ))}
@@ -81,11 +106,11 @@ export function CommentThread({
           }}
           placeholder="Написать комментарий…"
           rows={1}
-          className="min-h-10 resize-none"
+          className="min-h-11 resize-none text-base md:min-h-9 md:text-sm"
           aria-label="Комментарий"
         />
         <Button type="submit" size="icon" disabled={pending || !body.trim()} aria-label="Отправить">
-          <SendIcon />
+          {pending ? <Spinner /> : <SendIcon aria-hidden />}
         </Button>
       </form>
     </div>

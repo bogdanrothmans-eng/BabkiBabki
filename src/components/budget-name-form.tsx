@@ -5,6 +5,7 @@ import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Spinner } from "@/components/ui/spinner"
 import { renameBudget } from "@/lib/actions/budget"
 
 export function BudgetNameForm({ name }: { name: string }) {
@@ -23,6 +24,7 @@ export function BudgetNameForm({ name }: { name: string }) {
     >
       <Input value={value} onChange={(e) => setValue(e.target.value)} maxLength={60} aria-label="Название бюджета" />
       <Button type="submit" variant="outline" disabled={pending || !value.trim() || value === name}>
+        {pending && <Spinner />}
         Сохранить
       </Button>
     </form>

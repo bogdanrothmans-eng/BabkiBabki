@@ -6,6 +6,7 @@ import { useActionState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Spinner } from "@/components/ui/spinner"
 import { importSheetAction, type ImportState } from "@/lib/actions/budget"
 import { formatMoney } from "@/lib/money"
 import { MONTHS } from "@/lib/period"
@@ -31,16 +32,20 @@ export function ImportForm() {
           <Input id="import-year" name="year" type="number" inputMode="numeric" defaultValue={new Date().getFullYear()} min={2000} max={2100} required />
         </div>
         <Button type="submit" disabled={pending}>
-          <UploadIcon />
+          {pending ? <Spinner /> : <UploadIcon aria-hidden />}
           {pending ? "Импортируем…" : "Импортировать"}
         </Button>
       </form>
 
-      {state && !state.ok && <p className="text-sm text-destructive">{state.error}</p>}
+      {state && !state.ok && (
+        <p role="alert" className="text-sm text-destructive">
+          {state.error}
+        </p>
+      )}
       {state?.ok && (
-        <div className="flex flex-col gap-3 rounded-lg border p-4 text-sm">
+        <div role="status" className="flex flex-col gap-3 rounded-lg border p-4 text-sm">
           <p className="flex items-start gap-2">
-            <CheckCircle2Icon className="mt-0.5 size-4 shrink-0 text-income" />
+            <CheckCircle2Icon className="mt-0.5 size-4 shrink-0 text-income" aria-hidden />
             <span>
               Перенесли {state.result.imported} {plural(state.result.imported, ["сумму", "суммы", "сумм"])} на{" "}
               <b>{formatMoney(state.result.total)}</b> за {state.result.months.map((m) => MONTHS[m - 1]).join(", ")}{" "}
@@ -52,7 +57,7 @@ export function ImportForm() {
           )}
           {state.result.issues.map((issue, i) => (
             <p key={i} className="flex items-start gap-2">
-              <AlertTriangleIcon className="mt-0.5 size-4 shrink-0 text-amber-600" />
+              <AlertTriangleIcon className="mt-0.5 size-4 shrink-0 text-warning" aria-label="Предупреждение" />
               <span>
                 {issue.type === "text-number" &&
                   `«${issue.category}», ${MONTHS[issue.month - 1]}: «${issue.raw}» записано с пробелом — Google Таблица считает это текстом и не включает в итог. Мы учли эту сумму.`}

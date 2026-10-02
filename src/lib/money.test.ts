@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { formatMoney, parseAmount, toInputValue } from "./money"
+import { formatAmountInput, formatMoney, parseAmount, toInputValue } from "./money"
 
 describe("parseAmount", () => {
   it.each([
@@ -32,5 +32,23 @@ describe("formatMoney", () => {
   it("round-trips through the input format", () => {
     expect(parseAmount(toInputValue(123450))).toBe(123450)
     expect(toInputValue(35000)).toBe("350")
+  })
+})
+
+describe("formatAmountInput", () => {
+  it.each([
+    ["125000", "125 000"],
+    ["1250,5", "1 250,5"],
+    ["12.99", "12,99"],
+    ["1,2345", "1,23"],
+    ["007", "7"],
+    ["abc350р", "350"],
+    ["", ""],
+  ])("%j → %j", (raw, shown) => {
+    expect(formatAmountInput(raw)).toBe(shown)
+  })
+
+  it("stays parseable", () => {
+    expect(parseAmount(formatAmountInput("125000,5"))).toBe(12500050)
   })
 })

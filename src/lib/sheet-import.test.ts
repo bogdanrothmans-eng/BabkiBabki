@@ -2,7 +2,7 @@ import fs from "node:fs"
 import path from "node:path"
 import { describe, expect, it } from "vitest"
 
-import { guessEmoji, matchCategory, parseCsv, parseSheet } from "./sheet-import"
+import { matchCategory, parseCsv, parseSheet } from "./sheet-import"
 
 const sample = fs.readFileSync(path.join(import.meta.dirname, "../../seed/sheet-sample.csv"), "utf8")
 
@@ -46,16 +46,6 @@ describe("parseCsv", () => {
       ["a, b", 'say "hi"', "c"],
       ["1", "2", "3"],
     ])
-  })
-})
-
-describe("guessEmoji", () => {
-  it("maps sheet categories to icons", () => {
-    expect(guessEmoji("Такси")).toBe("🚕")
-    expect(guessEmoji("Общественный транспорт")).toBe("🚇")
-    expect(guessEmoji("Активности (зал, спорт, танцы)")).toBe("🏋️")
-    expect(guessEmoji("Что-то новое")).toBe("💸")
-    expect(guessEmoji("Зарплата", "income")).toBe("💰")
   })
 })
 

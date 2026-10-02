@@ -39,13 +39,14 @@ export function TransactionActions({
   return (
     <div className="flex gap-2">
       <Button variant="outline" onClick={() => setEditing(true)}>
-        <PencilIcon />
+        <PencilIcon aria-hidden />
         Изменить
       </Button>
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label="Удалить запись">
-            <Trash2Icon />
+          <Button variant="ghost" className="text-destructive hover:text-destructive">
+            <Trash2Icon aria-hidden />
+            Удалить
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
@@ -62,7 +63,7 @@ export function TransactionActions({
                 startTransition(async () => {
                   await deleteTransaction(draft.id)
                   toast.success("Запись удалена")
-                  router.push("/transactions")
+                  router.push(`/transactions?p=${draft.date?.slice(0, 7) ?? ""}`)
                 })
               }
             >

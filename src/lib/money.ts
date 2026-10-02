@@ -28,3 +28,11 @@ export function parseAmount(input: string): number | null {
 export function toInputValue(kopecks: number) {
   return kopecks % 100 === 0 ? String(kopecks / 100) : (kopecks / 100).toFixed(2).replace(".", ",")
 }
+
+// Groups thousands while the user types: "125000,5" → "125 000,5".
+export function formatAmountInput(raw: string) {
+  const cleaned = raw.replace(/[^\d,.]/g, "").replace(".", ",")
+  const [int = "", ...rest] = cleaned.split(",")
+  const grouped = int.replace(/^0+(?=\d)/, "").replace(/\B(?=(\d{3})+(?!\d))/g, " ")
+  return rest.length ? `${grouped},${rest.join("").slice(0, 2)}` : grouped
+}

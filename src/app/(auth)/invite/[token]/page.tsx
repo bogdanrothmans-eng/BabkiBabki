@@ -23,7 +23,9 @@ export default async function InvitePage({ params }: PageProps<"/invite/[token]"
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Ссылка больше не работает</CardTitle>
+          <CardTitle>
+            <h1>Ссылка больше не работает</h1>
+          </CardTitle>
           <CardDescription>Её уже использовали или прошло 7 дней. Попросите прислать новую.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -39,7 +41,11 @@ export default async function InvitePage({ params }: PageProps<"/invite/[token]"
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{invite.inviter} зовёт вас в «{invite.budget}»</CardTitle>
+        <CardTitle>
+          <h1>
+            {invite.inviter} зовёт вас в «{invite.budget}»
+          </h1>
+        </CardTitle>
         <CardDescription>
           Вы сможете вместе вносить траты, оставлять комментарии и прикладывать чеки.
         </CardDescription>
