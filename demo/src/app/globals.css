@@ -1,0 +1,3 @@
+@import "../../../src/app/globals.css";
+/* Shared components live outside the demo folder. */
+@source "../../../src";

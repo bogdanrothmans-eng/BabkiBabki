@@ -9,7 +9,9 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
-    "seed": "tsx --conditions=react-server scripts/seed.ts"
+    "seed": "tsx --conditions=react-server scripts/seed.ts",
+    "demo:dev": "next dev demo -p 3001",
+    "demo:build": "next build demo"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

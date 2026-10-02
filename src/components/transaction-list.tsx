@@ -6,6 +6,7 @@ import { MemberAvatar } from "@/components/member-avatars"
 import { formatMoney } from "@/lib/money"
 import { relativeDayLabel } from "@/lib/period"
 import type { TransactionRow } from "@/lib/queries"
+import { entryHref } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 
 export function TransactionList({ rows, showMembers }: { rows: TransactionRow[]; showMembers: boolean }) {
@@ -26,7 +27,7 @@ export function TransactionList({ rows, showMembers }: { rows: TransactionRow[];
               {items.map((t) => (
                 <li key={t.id}>
                   <Link
-                    href={`/transactions/${t.id}`}
+                    href={entryHref(t.id)}
                     className="flex min-h-16 items-center gap-3 px-3 py-2.5 transition-colors duration-150 hover:bg-accent/60 active:bg-accent focus-visible:relative focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
                   >
                     <CategoryIcon icon={t.category_icon} color={t.category_color} />

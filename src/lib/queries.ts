@@ -1,6 +1,7 @@
 import "server-only"
 
 import { db } from "./db"
+import type { TransactionFilter } from "./filter"
 import { type Period, shiftPeriod } from "./period"
 
 export type Kind = "expense" | "income"
@@ -55,13 +56,7 @@ const TRANSACTION_SELECT = `
   JOIN categories c ON c.id = t.category_id
   LEFT JOIN users u ON u.id = t.member_id`
 
-export type TransactionFilter = {
-  categoryId?: string
-  memberId?: string
-  kind?: Kind
-  q?: string
-  limit?: number
-}
+export type { TransactionFilter }
 
 export function listTransactions(budgetId: string, period: Period, filter: TransactionFilter = {}) {
   const where = ["t.budget_id = ?", "t.date BETWEEN ? AND ?"]
@@ -142,6 +137,8 @@ export function getSummary(budgetId: string, period: Period) {
   }
 }
 
+export type Summary = ReturnType<typeof getSummary>
+
 export type Comment = { id: string; body: string; created_at: string; user_id: string | null; user_name: string | null }
 export type Attachment = { id: string; file_name: string; mime: string; size: number; created_at: string; user_name: string | null }
 
@@ -166,6 +163,8 @@ export function getTransaction(budgetId: string, transactionId: string) {
     .all(transactionId) as Attachment[]
   return { ...row, comments, attachments }
 }
+
+export type Entry = NonNullable<ReturnType<typeof getTransaction>>
 
 export type PivotRow = { id: string; name: string; icon: string; color: string; kind: Kind; months: number[]; total: number }
 
@@ -201,6 +200,8 @@ export function getYearPivot(budgetId: string, year: number) {
     incomeTotals: monthTotals("income"),
   }
 }
+
+export type YearPivot = ReturnType<typeof getYearPivot>
 
 export function listInvites(budgetId: string) {
   return db

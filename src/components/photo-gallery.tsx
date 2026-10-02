@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { deleteAttachment, uploadPhotos } from "@/lib/actions/transactions"
 import { compressImage } from "@/lib/compress-image"
 import type { Attachment } from "@/lib/queries"
+import { fileUrl } from "@/lib/routes"
 
 export function PhotoGallery({ transactionId, attachments }: { transactionId: string; attachments: Attachment[] }) {
   const input = useRef<HTMLInputElement>(null)
@@ -35,13 +36,13 @@ export function PhotoGallery({ transactionId, attachments }: { transactionId: st
           <button
             key={a.id}
             type="button"
-            onClick={() => (a.mime === "application/pdf" ? window.open(`/files/${a.id}`, "_blank") : setViewing(a))}
+            onClick={() => (a.mime === "application/pdf" ? window.open(fileUrl(a.id), "_blank") : setViewing(a))}
             className="aspect-square overflow-hidden rounded-lg border bg-muted transition-opacity duration-150 hover:opacity-90 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
             aria-label={`Открыть ${a.file_name}`}
           >
             {a.mime.startsWith("image/") ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={`/files/${a.id}`} alt={a.file_name} loading="lazy" width={160} height={160} className="size-full object-cover" />
+              <img src={fileUrl(a.id)} alt={a.file_name} loading="lazy" width={160} height={160} className="size-full object-cover" />
             ) : (
               <span className="flex size-full flex-col items-center justify-center gap-1 text-xs text-muted-foreground">
                 <FileTextIcon className="size-6" aria-hidden />
@@ -87,7 +88,7 @@ export function PhotoGallery({ transactionId, attachments }: { transactionId: st
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={`/files/${viewing.id}`}
+                src={fileUrl(viewing.id)}
                 alt={viewing.file_name}
                 className="max-h-[80dvh] w-full rounded-md object-contain"
               />
