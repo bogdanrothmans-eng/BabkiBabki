@@ -7,7 +7,7 @@ import { DesktopNav, MobileNav } from "@/components/app-nav"
 import { NavigationTracker } from "@/components/back-button"
 import { logout } from "@/lib/actions/auth"
 import { requireContext } from "@/lib/auth"
-import { listCategories } from "@/lib/queries"
+import { listCategories, listHistory } from "@/lib/queries"
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, budget, members } = await requireContext()
@@ -18,6 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       categories={categories}
       members={members.map((m) => ({ id: m.id, name: m.name }))}
       currentUserId={user.id}
+      history={listHistory(budget.id)}
     >
       <div className="flex min-h-dvh flex-col">
         <header className="sticky top-0 z-30 border-b bg-background pt-[env(safe-area-inset-top)]">

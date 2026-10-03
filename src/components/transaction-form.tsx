@@ -1,30 +1,26 @@
 "use client"
 
-import { ru } from "date-fns/locale"
 import {
-  CalendarIcon,
   CameraIcon,
   ChevronUpIcon,
   EllipsisIcon,
   MessageSquareTextIcon,
-  UserIcon,
   XIcon,
 } from "lucide-react"
 import { startTransition, useActionState, useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 
 import { CategoryIcon } from "@/components/category-icon"
+import { DateChip, PayerChip } from "@/components/entry-chips"
 import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
 import { Label } from "@/components/ui/label"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Spinner } from "@/components/ui/spinner"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { saveTransaction, type SaveResult } from "@/lib/actions/transactions"
 import { compressImage } from "@/lib/compress-image"
 import { formatAmountInput, formatMoney, parseAmount, toInputValue } from "@/lib/money"
-import { formatDay, isoDate, parseIso } from "@/lib/period"
+import { isoDate } from "@/lib/period"
 import { cn } from "@/lib/utils"
 
 export type CategoryOption = {
@@ -82,12 +78,6 @@ export function TransactionForm({
   const categoryGroup = useRef<HTMLFieldSetElement>(null)
   const [state, dispatch, saving] = useActionState<SaveResult, FormData>(saveTransaction, undefined)
   const pending = saving || preparing
-  const [{ today, yesterday }] = useState(() => {
-    const now = new Date()
-    const y = new Date(now)
-    y.setDate(now.getDate() - 1)
-    return { today: isoDate(now), yesterday: isoDate(y) }
-  })
 
   const options = useMemo(() => {
     const ofKind = categories.filter((c) => c.kind === kind)
@@ -111,9 +101,6 @@ export function TransactionForm({
   const hasMore = options.all.length > QUICK_CATEGORIES
   // With more categories than fit, the 8th tile becomes "Ещё".
   const visible = showAll ? options.all : hasMore ? options.quick.slice(0, QUICK_CATEGORIES - 1) : options.quick
-  const payer = members.find((m) => m.id === memberId) ?? members[0]
-  const payerLabel = `${kind === "expense" ? "Платит" : "Получает"} ${payer?.name}`
-  const dateLabel = date === today ? "Сегодня" : date === yesterday ? "Вчера" : formatDay(date, true)
 
   async function submit(form: FormData) {
     const next: Errors = {}
@@ -239,49 +226,8 @@ export function TransactionForm({
 
       {/* Everything optional folds into one row of chips (progressive disclosure). */}
       <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap [&>button]:justify-start sm:[&>button]:justify-center">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button type="button" variant="outline" size="sm" className="rounded-full" aria-label={`Дата: ${dateLabel}`}>
-              <CalendarIcon aria-hidden />
-              {dateLabel}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <div className="flex gap-2 p-3 pb-0">
-              <Button type="button" size="sm" variant={date === today ? "default" : "outline"} onClick={() => setDate(today)}>
-                Сегодня
-              </Button>
-              <Button type="button" size="sm" variant={date === yesterday ? "default" : "outline"} onClick={() => setDate(yesterday)}>
-                Вчера
-              </Button>
-            </div>
-            <Calendar
-              mode="single"
-              locale={ru}
-              selected={parseIso(date)}
-              defaultMonth={parseIso(date)}
-              onSelect={(d) => d && setDate(isoDate(d))}
-            />
-          </PopoverContent>
-        </Popover>
-
-        {members.length > 1 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="rounded-full"
-            // The accessible name starts with the visible text (WCAG 2.5.3 Label in Name).
-            aria-label={`${payerLabel}. Нажмите, чтобы сменить`}
-            onClick={() => {
-              const i = members.findIndex((m) => m.id === memberId)
-              setMemberId(members[(i + 1) % members.length].id)
-            }}
-          >
-            <UserIcon aria-hidden />
-            {payerLabel}
-          </Button>
-        )}
+        <DateChip date={date} onChange={setDate} />
+        <PayerChip members={members} memberId={memberId ?? currentUserId} onChange={setMemberId} kind={kind} />
 
         {!showNote && (
           <Button type="button" variant="outline" size="sm" className="rounded-full" onClick={() => setShowNote(true)}>

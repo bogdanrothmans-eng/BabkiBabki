@@ -15,9 +15,12 @@ export default defineConfig({
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
     { name: "mobile", use: { ...devices["Pixel 7"] } },
   ],
+  // A production build: the dev server compiles routes on first hit and may
+  // reload the page mid-test, which made runs flaky.
   webServer: {
-    command: `DATA_DIR=.e2e-data next dev -p ${port}`,
+    command: `next build && DATA_DIR=.e2e-data next start -p ${port}`,
     port,
+    timeout: 180_000,
     reuseExistingServer: !process.env.CI,
   },
 })

@@ -32,18 +32,19 @@ const category = (name: string) =>
 
 const daysAgo = (n: number) => isoDate(new Date(Date.now() - n * 86400000))
 const entries: [string, "expense" | "income", number, number, string, string][] = [
-  ["Зарплата", "income", 12000000, 2, "Аванс", anya],
-  ["Зарплата", "income", 9500000, 1, "", misha],
-  ["Продукты питания", "expense", 384500, 0, "Пятёрочка на неделю", misha],
-  ["Сладости и кофе", "expense", 42000, 0, "Капучино и круассан", anya],
-  ["Такси", "expense", 61200, 1, "До аэропорта", anya],
-  ["Животные", "expense", 289000, 1, "Корм и наполнитель коту", misha],
-  ["ЖКХ", "expense", 731000, 2, "Квартплата за сентябрь", anya],
-  ["Кафе и рестораны", "expense", 456000, 3, "Ужин с друзьями", misha],
-  ["Аптеки", "expense", 128900, 4, "", anya],
-  ["Связь и интернет", "expense", 65000, 5, "Домашний интернет", misha],
-  ["Продукты питания", "expense", 215600, 6, "ВкусВилл", anya],
-  ["Одежда, обувь и аксессуары", "expense", 549000, 8, "Кроссовки", misha],
+  // The last sitting was five days ago, so the catch-up card shows up.
+  ["Зарплата", "income", 12000000, 7, "Аванс", anya],
+  ["Зарплата", "income", 9500000, 6, "", misha],
+  ["Продукты питания", "expense", 384500, 5, "Пятёрочка на неделю", misha],
+  ["Сладости и кофе", "expense", 42000, 5, "Капучино и круассан", anya],
+  ["Такси", "expense", 61200, 6, "До аэропорта", anya],
+  ["Животные", "expense", 289000, 6, "Корм и наполнитель коту", misha],
+  ["ЖКХ", "expense", 731000, 7, "Квартплата за сентябрь", anya],
+  ["Кафе и рестораны", "expense", 456000, 8, "Ужин с друзьями", misha],
+  ["Аптеки", "expense", 128900, 9, "", anya],
+  ["Связь и интернет", "expense", 65000, 10, "Домашний интернет", misha],
+  ["Продукты питания", "expense", 215600, 11, "ВкусВилл", anya],
+  ["Одежда, обувь и аксессуары", "expense", 549000, 13, "Кроссовки", misha],
 ]
 const insert = db.prepare(
   `INSERT INTO transactions (id, budget_id, category_id, kind, amount, date, note, member_id, created_by)

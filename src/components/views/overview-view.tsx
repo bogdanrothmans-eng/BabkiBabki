@@ -1,10 +1,7 @@
-import { FileSpreadsheetIcon } from "lucide-react"
-import Link from "next/link"
-
+import { CatchUpCard } from "@/components/catch-up-card"
 import { InviteBanner } from "@/components/invite-banner"
 import { PeriodPicker } from "@/components/period-picker"
 import { TransactionList } from "@/components/transaction-list"
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty"
 import { formatMoney } from "@/lib/money"
 import { type Period, periodPreposition, shiftPeriod } from "@/lib/period"
 import type { Summary, TransactionRow } from "@/lib/queries"
@@ -25,11 +22,13 @@ export function OverviewView({
   summary,
   rows,
   memberCount,
+  coveredUntil,
 }: {
   period: Period
   summary: Summary
   rows: TransactionRow[]
   memberCount: number
+  coveredUntil: string | null
 }) {
   const balance = summary.income - summary.expense
 
@@ -59,27 +58,12 @@ export function OverviewView({
       </section>
 
       {memberCount === 1 && <InviteBanner />}
-
-      {rows.length ? (
-        <TransactionList rows={rows} showMembers={memberCount > 1} />
-      ) : (
-        <Empty className="border">
-          <EmptyHeader>
-            <EmptyMedia variant="icon">
-              <FileSpreadsheetIcon aria-hidden />
-            </EmptyMedia>
-            <EmptyTitle>Пока пусто</EmptyTitle>
-            <EmptyDescription>
-              Нажмите «+», чтобы добавить первую трату, или{" "}
-              <Link href="/settings#import" className="text-foreground underline underline-offset-4">
-                перенесите историю из Google Таблицы
-              </Link>
-              .
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent />
-        </Empty>
+      {/* An empty period is the same situation as falling behind: offer the batch ways in. */}
+      {(period.kind === "month" || rows.length === 0) && (
+        <CatchUpCard coveredUntil={coveredUntil} periodKey={period.key} always={rows.length === 0} />
       )}
+
+      {rows.length > 0 && <TransactionList rows={rows} showMembers={memberCount > 1} />}
     </div>
   )
 }

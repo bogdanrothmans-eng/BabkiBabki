@@ -211,3 +211,24 @@ export function listInvites(budgetId: string) {
     )
     .all(budgetId, new Date().toISOString()) as { token: string; created_at: string; expires_at: string }[]
 }
+
+// What this couple called things and where they filed them — the quick-entry
+// guesser learns from it ("пятёрочка" → their "Продукты").
+export function listHistory(budgetId: string, limit = 400) {
+  return db
+    .prepare(
+      `SELECT note, category_id FROM transactions
+       WHERE budget_id = ? AND source = 'manual' AND note != ''
+       ORDER BY created_at DESC LIMIT ?`,
+    )
+    .all(budgetId, limit) as { note: string; category_id: string }[]
+}
+
+// The latest day covered by hand-entered spending: everything after it is
+// what the couple still has to catch up on.
+export function coveredUntil(budgetId: string) {
+  const row = db
+    .prepare("SELECT MAX(date) AS date FROM transactions WHERE budget_id = ? AND source = 'manual'")
+    .get(budgetId) as { date: string | null }
+  return row.date
+}

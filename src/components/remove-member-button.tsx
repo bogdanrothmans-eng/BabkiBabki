@@ -37,7 +37,7 @@ export function RemoveMemberButton({ id, name }: { id: string; name: string }) {
           <AlertDialogCancel>Отмена</AlertDialogCancel>
           <AlertDialogAction
             disabled={pending}
-            className="bg-destructive text-white hover:bg-destructive/90"
+            className="bg-destructive text-background hover:bg-destructive/90"
             onClick={() =>
               startTransition(async () => {
                 await removeMember(id)

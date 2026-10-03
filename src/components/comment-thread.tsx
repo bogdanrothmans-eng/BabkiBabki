@@ -77,7 +77,7 @@ export function CommentThread({
                     <AlertDialogFooter>
                       <AlertDialogCancel>Отмена</AlertDialogCancel>
                       <AlertDialogAction
-                        className="bg-destructive text-white hover:bg-destructive/90"
+                        className="bg-destructive text-background hover:bg-destructive/90"
                         onClick={() => startTransition(() => deleteComment(c.id))}
                       >
                         Удалить

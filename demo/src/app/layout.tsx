@@ -25,15 +25,13 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6f7f9" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b1120" },
-  ],
+  themeColor: "#0f0f0f",
+  colorScheme: "dark",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ru" className={plex.variable} suppressHydrationWarning>
+    <html lang="ru" className={`${plex.variable} dark`} suppressHydrationWarning>
       <body className="min-h-dvh antialiased">
         <a
           href="#main"
@@ -41,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Перейти к содержимому
         </a>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" forcedTheme="dark" disableTransitionOnChange>
           <TooltipProvider>
             <DemoShell>
               <Suspense fallback={<PageSkeleton />}>{children}</Suspense>

@@ -154,18 +154,19 @@ function seed(): DemoState {
     return isoDate(d)
   }
   const entries: [string, Kind, number, number, string, string][] = [
-    ["Зарплата", "income", 12000000, 2, "Аванс", ANYA],
-    ["Зарплата", "income", 9500000, 1, "", MISHA],
-    ["Продукты питания", "expense", 384500, 0, "Пятёрочка на неделю", MISHA],
-    ["Сладости и кофе", "expense", 42000, 0, "Капучино и круассан", ANYA],
-    ["Такси", "expense", 61200, 1, "До аэропорта", ANYA],
-    ["Животные", "expense", 289000, 1, "Корм и наполнитель коту", MISHA],
-    ["ЖКХ", "expense", 731000, 2, "Квартплата", ANYA],
-    ["Кафе и рестораны", "expense", 456000, 3, "Ужин с друзьями", MISHA],
-    ["Аптеки", "expense", 128900, 4, "", ANYA],
-    ["Связь и интернет", "expense", 65000, 5, "Домашний интернет", MISHA],
-    ["Продукты питания", "expense", 215600, 6, "ВкусВилл", ANYA],
-    ["Одежда, обувь и аксессуары", "expense", 549000, 8, "Кроссовки", MISHA],
+    // The last sitting was five days ago, so the catch-up card shows up.
+    ["Зарплата", "income", 12000000, 7, "Аванс", ANYA],
+    ["Зарплата", "income", 9500000, 6, "", MISHA],
+    ["Продукты питания", "expense", 384500, 5, "Пятёрочка на неделю", MISHA],
+    ["Сладости и кофе", "expense", 42000, 5, "Капучино и круассан", ANYA],
+    ["Такси", "expense", 61200, 6, "До аэропорта", ANYA],
+    ["Животные", "expense", 289000, 6, "Корм и наполнитель коту", MISHA],
+    ["ЖКХ", "expense", 731000, 7, "Квартплата", ANYA],
+    ["Кафе и рестораны", "expense", 456000, 8, "Ужин с друзьями", MISHA],
+    ["Аптеки", "expense", 128900, 9, "", ANYA],
+    ["Связь и интернет", "expense", 65000, 10, "Домашний интернет", MISHA],
+    ["Продукты питания", "expense", 215600, 11, "ВкусВилл", ANYA],
+    ["Одежда, обувь и аксессуары", "expense", 549000, 13, "Кроссовки", MISHA],
   ]
   const ids = entries.map(([cat, kind, amount, ago, note, who]) => {
     const tid = id()
@@ -395,4 +396,16 @@ export function getYearPivot(s: DemoState, year: number): YearPivot {
 
 export function attachmentData(attachmentId: string) {
   return getState().attachments.find((a) => a.id === attachmentId)?.data
+}
+
+export function listHistory(s: DemoState) {
+  return s.transactions
+    .filter((t) => t.source === "manual" && t.note)
+    .slice(-400)
+    .map((t) => ({ note: t.note, category_id: t.category_id }))
+}
+
+export function coveredUntil(s: DemoState) {
+  const dates = s.transactions.filter((t) => t.source === "manual").map((t) => t.date)
+  return dates.length ? dates.sort().at(-1)! : null
 }

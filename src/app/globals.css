@@ -5,10 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Tokens follow the ui-ux-pro-max recommendation for a personal finance
- * tracker: Minimalism & Swiss style, trust blue for actions, green only for
- * income (always paired with a "+" sign). Every text pair is ≥4.5:1 and every
- * icon/border pair ≥3:1 in both themes — see docs/ux-audit.md.
+ * Dark-only theme: background #0F0F0F, accent #4AC3F8. Minimalism & Swiss
+ * style from ui-ux-pro-max; green only for income (always with a "+" sign).
+ * Text pairs are ≥6:1, icons and input borders ≥3:1 — see docs/ux-audit.md.
  */
 @theme inline {
   --font-sans: var(--font-plex), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -42,65 +41,29 @@
 
 :root {
   --radius: 0.75rem;
-  --background: #f6f7f9;
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #1e40af;
-  --primary-foreground: #ffffff;
-  --secondary: #eef2f7;
-  --secondary-foreground: #0f172a;
-  --muted: #f1f4f8;
-  --muted-foreground: #526075;
-  --accent: #eef3fd;
-  --accent-foreground: #0f172a;
-  --destructive: #dc2626;
-  --border: #e3e8ef;
-  --input: #8a96a8;
-  --ring: #3b6fe0;
-  --income: #047857;
-  --warning: #b45309;
-  --chart-1: #1e40af;
-  --chart-2: #e3e8ef;
-
-  --cat-blue: #2563eb;
-  --cat-indigo: #4f46e5;
-  --cat-violet: #7c3aed;
-  --cat-pink: #db2777;
-  --cat-red: #dc2626;
-  --cat-orange: #c2410c;
-  --cat-amber: #a16207;
-  --cat-green: #15803d;
-  --cat-teal: #0f766e;
-  --cat-sky: #0369a1;
-  --cat-slate: #475569;
-}
-
-.dark {
-  --background: #0b1120;
-  --foreground: #f1f5f9;
-  --card: #121a2c;
-  --card-foreground: #f1f5f9;
-  --popover: #172034;
-  --popover-foreground: #f1f5f9;
-  --primary: #7aa7ff;
-  --primary-foreground: #0b1120;
-  --secondary: #1c2638;
-  --secondary-foreground: #f1f5f9;
-  --muted: #1c2638;
-  --muted-foreground: #9aa8bc;
-  --accent: #1d2a44;
-  --accent-foreground: #f1f5f9;
+  /* Dark only. Surfaces step up in lightness instead of using shadows. */
+  --background: #0f0f0f;
+  --foreground: #f2f2f2;
+  --card: #181818;
+  --card-foreground: #f2f2f2;
+  --popover: #1f1f1f;
+  --popover-foreground: #f2f2f2;
+  --primary: #4ac3f8;
+  --primary-foreground: #0f0f0f;
+  --secondary: #232323;
+  --secondary-foreground: #f2f2f2;
+  --muted: #232323;
+  --muted-foreground: #a1a1a1;
+  --accent: #262626;
+  --accent-foreground: #f2f2f2;
   --destructive: #f87171;
-  --border: #243049;
-  --input: #64738f;
-  --ring: #7aa7ff;
-  --income: #34d399;
+  --border: #2e2e2e;
+  --input: #6e6e6e;
+  --ring: #4ac3f8;
+  --income: #4ade80;
   --warning: #fbbf24;
-  --chart-1: #7aa7ff;
-  --chart-2: #243049;
+  --chart-1: #4ac3f8;
+  --chart-2: #2e2e2e;
 
   --cat-blue: #60a5fa;
   --cat-indigo: #a5b4fc;
@@ -113,6 +76,8 @@
   --cat-teal: #5eead4;
   --cat-sky: #7dd3fc;
   --cat-slate: #cbd5e1;
+
+  color-scheme: dark;
 }
 
 @layer base {

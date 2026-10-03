@@ -111,7 +111,7 @@ export function parseSheet(text: string): ParsedSheet {
   return { categories, cells, monthTotals, issues }
 }
 
-function normalize(name: string) {
+export function normalize(name: string) {
   return name
     .toLowerCase()
     .replace(/\(.*?\)/g, " ")

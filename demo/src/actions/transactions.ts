@@ -132,3 +132,49 @@ export async function deleteAttachment(attachmentId: string) {
     d.attachments = d.attachments.filter((a) => a.id !== attachmentId)
   })
 }
+
+type DraftEntry = {
+  kind: "expense" | "income"
+  amount: number
+  categoryId: string
+  date: string
+  note: string
+  memberId?: string
+}
+
+export async function saveEntries(entries: DraftEntry[]) {
+  if (!entries.length) return { ok: false as const, error: "Нечего сохранять" }
+  const s = getState()
+  for (const [i, e] of entries.entries()) {
+    const category = s.categories.find((c) => c.id === e.categoryId)
+    if (!Number.isInteger(e.amount) || e.amount <= 0) return { ok: false as const, error: `Строка ${i + 1}: неверная сумма` }
+    if (category?.kind !== e.kind) return { ok: false as const, error: `Строка ${i + 1}: выберите категорию` }
+  }
+  try {
+    update((d) => {
+      const stamp = now()
+      for (const e of entries) {
+        d.transactions.push({
+          id: id(),
+          category_id: e.categoryId,
+          kind: e.kind,
+          amount: e.amount,
+          date: e.date,
+          note: e.note.trim().slice(0, 500),
+          member_id: d.members.some((m) => m.id === e.memberId) ? e.memberId! : d.currentUserId,
+          created_by: d.currentUserId,
+          source: "manual",
+          created_at: stamp,
+          updated_at: stamp,
+        })
+      }
+    })
+    return {
+      ok: true as const,
+      count: entries.length,
+      total: entries.reduce((sum, e) => sum + (e.kind === "expense" ? e.amount : 0), 0),
+    }
+  } catch (error) {
+    return { ok: false as const, error: message(error) }
+  }
+}

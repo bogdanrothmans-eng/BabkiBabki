@@ -58,7 +58,7 @@ export function TransactionActions({
             <AlertDialogCancel>Отмена</AlertDialogCancel>
             <AlertDialogAction
               disabled={pending}
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-background hover:bg-destructive/90"
               onClick={() =>
                 startTransition(async () => {
                   await deleteTransaction(draft.id)

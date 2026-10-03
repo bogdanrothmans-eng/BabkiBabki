@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { OverviewView } from "@/components/views/overview-view"
 import { parsePeriod } from "@/lib/period"
 
-import { getSummary, listTransactions, useDemo } from "../store"
+import { coveredUntil, getSummary, listTransactions, useDemo } from "../store"
 
 export default function OverviewPage() {
   const s = useDemo()
@@ -16,6 +16,7 @@ export default function OverviewPage() {
       period={period}
       summary={getSummary(s, period)}
       rows={listTransactions(s, period)}
+      coveredUntil={coveredUntil(s)}
       memberCount={s.members.length}
     />
   )

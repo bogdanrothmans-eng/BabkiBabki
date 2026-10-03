@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
 import { requireContext } from "../auth"
-import { db, id } from "../db"
+import { db, id, transaction } from "../db"
 import { removeFiles, saveAttachment, validateUpload } from "../files"
 import { parseAmount } from "../money"
 
@@ -73,6 +73,47 @@ export async function saveTransaction(_: SaveResult, form: FormData): Promise<Sa
 
   revalidatePath("/", "layout")
   return { ok: true, id: transactionId }
+}
+
+export type DraftEntry = {
+  kind: "expense" | "income"
+  amount: number // kopecks
+  categoryId: string
+  date: string
+  note: string
+  memberId?: string
+}
+
+export type SaveManyResult = { ok: true; count: number; total: number } | { ok: false; error: string }
+
+// Batch entry: a pasted list, a dictated week, or sums per category for a month.
+export async function saveEntries(entries: DraftEntry[]): Promise<SaveManyResult> {
+  const { user, budget, members } = await requireContext()
+  if (!entries.length) return { ok: false, error: "Нечего сохранять" }
+  if (entries.length > 500) return { ok: false, error: "За раз можно сохранить до 500 записей" }
+  const categories = new Map(
+    (db.prepare("SELECT id, kind FROM categories WHERE budget_id = ?").all(budget.id) as { id: string; kind: string }[]).map(
+      (c) => [c.id, c.kind],
+    ),
+  )
+  for (const [i, e] of entries.entries()) {
+    const row = `Строка ${i + 1}: `
+    if (!Number.isInteger(e.amount) || e.amount <= 0 || e.amount > 100_000_000_00) return { ok: false, error: `${row}неверная сумма` }
+    if (categories.get(e.categoryId) !== e.kind) return { ok: false, error: `${row}выберите категорию` }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(e.date)) return { ok: false, error: `${row}неверная дата` }
+  }
+  const insert = db.prepare(
+    `INSERT INTO transactions (id, budget_id, category_id, kind, amount, date, note, member_id, created_by)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  )
+  transaction(() => {
+    for (const e of entries) {
+      const memberId = members.some((m) => m.id === e.memberId) ? e.memberId! : user.id
+      insert.run(id(), budget.id, e.categoryId, e.kind, e.amount, e.date, e.note.trim().slice(0, 500), memberId, user.id)
+    }
+  })
+  revalidatePath("/", "layout")
+  return { ok: true, count: entries.length, total: entries.reduce((s, e) => s + (e.kind === "expense" ? e.amount : 0), 0) }
 }
 
 function ownsTransaction(transactionId: string, budgetId: string) {

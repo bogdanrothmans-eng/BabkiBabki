@@ -11,7 +11,7 @@ import { NavigationTracker } from "@/components/back-button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
-import { listCategories, update, useDemo } from "./store"
+import { listCategories, listHistory, update, useDemo } from "./store"
 
 // One quiet line: the demo has no login, so this switch shows the partner's view.
 function DemoBar() {
@@ -91,6 +91,7 @@ export function DemoShell({ children }: { children: React.ReactNode }) {
       categories={listCategories(s)}
       members={s.members.map((m) => ({ id: m.id, name: m.name }))}
       currentUserId={s.currentUserId}
+      history={listHistory(s)}
     >
       {shell}
     </AddTransactionProvider>

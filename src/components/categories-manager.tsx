@@ -135,7 +135,7 @@ function CategoryEditor({ editing, onDone }: { editing: Editing; onDone: () => v
               <span
                 style={{ backgroundColor: `var(--cat-${c})` }}
                 className={cn(
-                  "flex size-8 items-center justify-center rounded-full text-white ring-offset-2 ring-offset-background",
+                  "flex size-8 items-center justify-center rounded-full text-background ring-offset-2 ring-offset-background",
                   color === c && "ring-2 ring-foreground",
                 )}
               >
@@ -207,7 +207,7 @@ function RemoveCategory({ category }: { category: Category }) {
           <AlertDialogCancel>Отмена</AlertDialogCancel>
           <AlertDialogAction
             disabled={pending}
-            className={archive ? undefined : "bg-destructive text-white hover:bg-destructive/90"}
+            className={archive ? undefined : "bg-destructive text-background hover:bg-destructive/90"}
             onClick={() =>
               startTransition(async () => {
                 await removeCategory(category.id)

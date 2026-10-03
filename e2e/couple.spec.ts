@@ -71,8 +71,9 @@ test("a couple shares one budget", async ({ page, browser }, info) => {
   await expect(partner.getByText(/Аня зовёт вас/)).toBeVisible()
   await register(partner, "Миша", `misha-${run}@example.com`, new URL(link).pathname)
 
-  // Partner adds an expense with a receipt.
+  // Partner adds an expense with a receipt through the detailed form.
   await openAddDialog(partner)
+  await partner.getByRole("button", { name: "Форма с чеком и комментарием" }).click()
   await partner.getByLabel("Сумма").fill("1250")
   await expect(partner.getByLabel("Сумма")).toHaveValue("1 250")
   await partner.getByRole("button", { name: /Продукты питания/ }).click()
@@ -112,15 +113,52 @@ test("a couple shares one budget", async ({ page, browser }, info) => {
   expect((await stranger.request.get(fileUrl!)).status()).toBe(404)
 })
 
-test("add form explains what is missing next to the field", async ({ page }, info) => {
+test("quick entry: one line at a time, guessing the category", async ({ page }, info) => {
   await register(page, "Лена", `lena-${Date.now()}-${info.project.name}@example.com`)
   await openAddDialog(page)
-  await page.getByRole("button", { name: /^Добавить$/ }).last().click()
-  await expect(page.getByText("Введите сумму больше нуля")).toBeVisible()
-  await expect(page.getByLabel("Сумма")).toBeFocused()
-  await page.getByLabel("Сумма").fill("300")
-  await page.getByRole("button", { name: /Добавить 300/ }).click()
-  await expect(page.getByText("Выберите категорию")).toBeVisible()
+  const line = page.getByLabel("Что и сколько")
+  await line.fill("кофе")
+  await line.press("Enter")
+  await expect(page.getByText("Добавьте сумму — например «кофе 350»")).toBeVisible()
+
+  await line.fill("350 кофе")
+  await expect(page.getByRole("button", { name: /Категория: Сладости и кофе/ })).toBeVisible()
+  await line.press("Enter")
+  await expect(page.getByText(/Добавлено сейчас: 1/)).toBeVisible()
+  await expect(line).toHaveValue("")
+  await expect(line).toBeFocused()
+
+  await line.fill("пятёрочка 3845+1200")
+  await expect(page.getByRole("button", { name: /Категория: Продукты питания/ })).toBeVisible()
+  await line.press("Enter")
+  await expect(page.getByText(/Добавлено сейчас: 2 · 5\s395 ₽/)).toBeVisible()
+})
+
+test("quick entry: a pasted list", async ({ page }, info) => {
+  await register(page, "Оля", `olya-list-${Date.now()}-${info.project.name}@example.com`)
+  await openAddDialog(page)
+  await page.getByRole("tab", { name: "Списком" }).click()
+  await page.getByLabel("Траты, по одной на строку").fill("такси 612\nаптека 900\nчто-то странное 100\nбез суммы")
+  await expect(page.getByText("«без суммы» — нет суммы, пропустим")).toBeVisible()
+  await page.getByRole("button", { name: /Сохранить 3 записи/ }).click()
+  await expect(page.getByText("Выберите категорию для 1 строки")).toBeVisible()
+  await page.getByRole("button", { name: "Выбрать категорию" }).click()
+  await page.getByRole("option", { name: "Непредвиденные покупки" }).click()
+  await page.getByRole("button", { name: /Сохранить 3 записи · 1\s612 ₽/ }).click()
+  await expect(page.getByText(/Добавлено сейчас: 3/)).toBeVisible()
+})
+
+test("sums by category for a month, like the spreadsheet column", async ({ page }, info) => {
+  await register(page, "Таня", `tanya-${Date.now()}-${info.project.name}@example.com`)
+  await page.goto("/batch?p=2026-09")
+  await page.getByLabel("Продукты питания").fill("3845+1200")
+  await expect(page.getByText("= 5 045 ₽")).toBeVisible()
+  await page.getByLabel("Продукты питания").press("Enter")
+  await expect(page.getByLabel("Чипсы и пиво")).toBeFocused()
+  await page.getByLabel("Такси").fill("612")
+  await page.getByRole("button", { name: /Сохранить 2 суммы · 5\s657 ₽/ }).click()
+  await expect(page.getByText("Потрачено в сентябре")).toBeVisible()
+  await expect(page.getByText("5 657 ₽").first()).toBeVisible()
 })
 
 test("categories get a vector icon and colour", async ({ page }, info) => {
