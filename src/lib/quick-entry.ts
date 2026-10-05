@@ -9,14 +9,17 @@ export type QuickEntry = {
   text: string // what is left after the amount, used as the note and for guessing
 }
 
-// "3845+1200" → 504500, "350,50" → 35050, "12 429" (nbsp) → 1242900.
+// "3845+1200" → 504500, "1200−200" → 100000, "350,50" → 35050, "12 429" (nbsp) → 1242900.
+const TERM = String.raw`\d+(?:[.,]\d{1,2})?`
+const EXPRESSION = new RegExp(`^${TERM}(?:[+-]${TERM})*$`)
+
 export function evalAmount(expr: string): number | null {
-  const parts = expr
-    .replace(/[  ]/g, "")
-    .split("+")
-    .map((p) => p.trim())
-  if (parts.some((p) => !/^\d+([.,]\d{1,2})?$/.test(p))) return null
-  const total = parts.reduce((sum, p) => sum + Math.round(Number(p.replace(",", ".")) * 100), 0)
+  const s = expr.replace(/[\s\u00a0\u202f]/g, "").replace(/−/g, "-")
+  if (!EXPRESSION.test(s)) return null
+  let total = 0
+  for (const [, sign, term] of s.matchAll(new RegExp(`([+-]?)(${TERM})`, "g"))) {
+    total += (sign === "-" ? -1 : 1) * Math.round(Number(term.replace(",", ".")) * 100)
+  }
   return total > 0 ? total : null
 }
 

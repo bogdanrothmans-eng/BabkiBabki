@@ -26,6 +26,14 @@ async function openAddDialog(page: Page) {
   else await page.getByRole("button", { name: "Добавить", exact: true }).click()
 }
 
+// Phones get the sheet's own keypad; desktop types into the amount field.
+async function typeAmount(page: Page, expr: string) {
+  const keypad = page.getByRole("group", { name: "Клавиатура суммы" })
+  if (!(await keypad.isVisible())) return page.getByLabel(/^Сумма (расхода|дохода)$/).fill(expr)
+  const names: Record<string, string> = { "+": "Плюс", "-": "Минус", ",": "Запятая" }
+  for (const ch of expr) await keypad.getByRole("button", { name: names[ch] ?? ch, exact: true }).click()
+}
+
 async function newPage(browser: Browser) {
   const context = await browser.newContext(test.info().project.use)
   return context.newPage()
@@ -71,17 +79,16 @@ test("a couple shares one budget", async ({ page, browser }, info) => {
   await expect(partner.getByText(/Аня зовёт вас/)).toBeVisible()
   await register(partner, "Миша", `misha-${run}@example.com`, new URL(link).pathname)
 
-  // Partner adds an expense with a receipt through the detailed form.
+  // Partner adds an expense with a receipt and a comment.
   await openAddDialog(partner)
-  await partner.getByRole("button", { name: "Форма с чеком и комментарием" }).click()
-  await partner.getByLabel("Сумма").fill("1250")
-  await expect(partner.getByLabel("Сумма")).toHaveValue("1 250")
+  await typeAmount(partner, "1250")
   await partner.getByRole("button", { name: /Продукты питания/ }).click()
-  await partner.getByRole("button", { name: "Комментарий" }).click()
   await partner.getByLabel("Комментарий").fill("Пятёрочка на неделю")
   await partner.locator('input[type="file"]').setInputFiles({ name: "check.png", mimeType: "image/png", buffer: PNG })
+  await expect(partner.getByRole("button", { name: "Чек · 1" })).toBeVisible()
   await partner.getByRole("button", { name: /Добавить 1\s250/ }).click()
-  await expect(partner.getByText("Добавлено")).toBeVisible()
+  await expect(partner.getByRole("button", { name: "Добавлено: Продукты питания" })).toBeVisible()
+  await partner.getByRole("button", { name: "Закрыть" }).click()
 
   await partner.getByRole("link", { name: /Пятёрочка на неделю/ }).first().click()
   await expect(partner.getByRole("definition").filter({ hasText: "Миша" })).toBeVisible()
@@ -113,31 +120,38 @@ test("a couple shares one budget", async ({ page, browser }, info) => {
   expect((await stranger.request.get(fileUrl!)).status()).toBe(404)
 })
 
-test("quick entry: one line at a time, guessing the category", async ({ page }, info) => {
+test("add sheet: calculator, guessed category, income", async ({ page }, info) => {
   await register(page, "Лена", `lena-${Date.now()}-${info.project.name}@example.com`)
   await openAddDialog(page)
-  const line = page.getByLabel("Что и сколько")
-  await line.fill("кофе")
-  await line.press("Enter")
-  await expect(page.getByText("Добавьте сумму — например «кофе 350»")).toBeVisible()
+  await page.getByRole("button", { name: /^Добавить/ }).last().click()
+  await expect(page.getByText("Введите сумму")).toBeVisible()
+  await expect(page.getByText("Выберите категорию")).toBeVisible()
 
-  await line.fill("350 кофе")
-  await expect(page.getByRole("button", { name: /Категория: Сладости и кофе/ })).toBeVisible()
-  await line.press("Enter")
-  await expect(page.getByText(/Добавлено сейчас: 1/)).toBeVisible()
-  await expect(line).toHaveValue("")
-  await expect(line).toBeFocused()
+  // A receipt summed on the keypad; the comment picks the category.
+  await typeAmount(page, "3845+1200")
+  await page.getByLabel("Комментарий").fill("пятёрочка")
+  await expect(page.getByRole("button", { name: /Продукты питания/ })).toHaveAttribute("aria-pressed", "true")
+  await page.getByRole("button", { name: /Добавить 5\s045/ }).click()
+  await expect(page.getByRole("button", { name: "Добавлено: Продукты питания" })).toBeVisible()
 
-  await line.fill("пятёрочка 3845+1200")
-  await expect(page.getByRole("button", { name: /Категория: Продукты питания/ })).toBeVisible()
-  await line.press("Enter")
-  await expect(page.getByText(/Добавлено сейчас: 2 · 5\s395 ₽/)).toBeVisible()
+  // The sheet stays open for the next one.
+  await page.getByRole("radio", { name: "Доход" }).click()
+  await typeAmount(page, "120000")
+  await page.getByRole("button", { name: "Зарплата" }).click()
+  await page.getByRole("button", { name: /Добавить 120\s000/ }).click()
+  await expect(page.getByRole("button", { name: "Добавлено · 2-я запись" })).toBeVisible()
+  await page.getByRole("button", { name: "Закрыть" }).click()
+
+  await expect(page.getByText(/Потрачено в/)).toBeVisible()
+  await expect(page.getByText(/5\s045 ₽/).first()).toBeVisible()
+  await expect(page.getByText(/\+120\s000 ₽/).first()).toBeVisible()
 })
 
 test("quick entry: a pasted list", async ({ page }, info) => {
   await register(page, "Оля", `olya-list-${Date.now()}-${info.project.name}@example.com`)
   await openAddDialog(page)
-  await page.getByRole("tab", { name: "Списком" }).click()
+  await page.getByRole("button", { name: "Другие способы ввода" }).click()
+  await page.getByRole("menuitem", { name: "Несколько трат списком" }).click()
   await page.getByLabel("Траты, по одной на строку").fill("такси 612\nаптека 900\nчто-то странное 100\nбез суммы")
   await expect(page.getByText("«без суммы» — нет суммы, пропустим")).toBeVisible()
   await page.getByRole("button", { name: /Сохранить 3 записи/ }).click()
@@ -145,7 +159,7 @@ test("quick entry: a pasted list", async ({ page }, info) => {
   await page.getByRole("button", { name: "Выбрать категорию" }).click()
   await page.getByRole("option", { name: "Непредвиденные покупки" }).click()
   await page.getByRole("button", { name: /Сохранить 3 записи · 1\s612 ₽/ }).click()
-  await expect(page.getByText(/Добавлено сейчас: 3/)).toBeVisible()
+  await expect(page.getByText(/Добавлено 3 записи · 1\s612 ₽/)).toBeVisible()
 })
 
 test("sums by category for a month, like the spreadsheet column", async ({ page }, info) => {

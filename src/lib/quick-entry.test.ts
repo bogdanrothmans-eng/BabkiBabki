@@ -10,11 +10,15 @@ describe("evalAmount", () => {
     ["350,50", 35050],
     ["12\u00a0429", 1242900],
     ["100 + 50", 15000],
+    ["1200−200", 100000],
+    ["1200-200+50,5", 105050],
   ])("%j → %d", (expr, kopecks) => expect(evalAmount(expr)).toBe(kopecks))
 
   it("rejects junk", () => {
     expect(evalAmount("3845+")).toBeNull()
     expect(evalAmount("abc")).toBeNull()
+    expect(evalAmount("100-100")).toBeNull()
+    expect(evalAmount("-100")).toBeNull()
   })
 })
 

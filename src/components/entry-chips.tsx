@@ -9,6 +9,9 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { formatDay, isoDate, parseIso } from "@/lib/period"
 
+// iOS-style filled chips: 44px tall for touch, 40px with a pointer.
+export const CHIP = "h-11 rounded-full px-4 font-medium md:h-10 [&_svg]:text-muted-foreground"
+
 export function useTodayYesterday() {
   const [days] = useState(() => {
     const now = new Date()
@@ -32,13 +35,13 @@ export function DateChip({ date, onChange, prefix = "" }: { date: string; onChan
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" size="sm" className="rounded-full" aria-label={`${prefix}${label}. Сменить дату`}>
+        <Button type="button" variant="secondary" className={CHIP} aria-label={`${prefix}${label}. Сменить дату`}>
           <CalendarIcon aria-hidden />
           {prefix}
           {label}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent className="w-auto rounded-3xl p-0" align="start">
         <div className="flex gap-2 p-3 pb-0">
           <Button type="button" size="sm" variant={date === today ? "default" : "outline"} onClick={() => pick(today)}>
             Сегодня
@@ -78,9 +81,8 @@ export function PayerChip({
   return (
     <Button
       type="button"
-      variant="outline"
-      size="sm"
-      className="rounded-full"
+      variant="secondary"
+      className={CHIP}
       aria-label={`${label}. Нажмите, чтобы сменить`}
       onClick={() => {
         const i = members.findIndex((m) => m.id === payer.id)

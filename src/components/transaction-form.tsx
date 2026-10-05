@@ -311,7 +311,7 @@ export function TransactionForm({
   )
 }
 
-function PhotoPreview({ file, url, onRemove }: { file: File; url: string; onRemove: () => void }) {
+export function PhotoPreview({ file, url, onRemove }: { file: File; url: string; onRemove: () => void }) {
   return (
     <div className="relative size-16">
       <div className="size-full overflow-hidden rounded-lg border bg-muted">

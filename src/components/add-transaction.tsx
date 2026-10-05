@@ -3,26 +3,23 @@
 import { PlusIcon } from "lucide-react"
 import { createContext, useContext, useState } from "react"
 
-import { QuickAdd } from "@/components/quick-add"
+import { AddSheet, type AddView } from "@/components/add-sheet"
 import { ResponsiveDialog } from "@/components/responsive-dialog"
-import { type CategoryOption, type MemberOption, TransactionForm } from "@/components/transaction-form"
+import type { CategoryOption, MemberOption } from "@/components/transaction-form"
 import { Button } from "@/components/ui/button"
 import type { HistoryItem } from "@/lib/quick-entry"
 import { cn } from "@/lib/utils"
 
-type Mode = "line" | "list"
-const AddTransactionContext = createContext<(mode?: Mode) => void>(() => {})
+const AddTransactionContext = createContext<(view?: AddView) => void>(() => {})
 
 export function useAddTransaction() {
   return useContext(AddTransactionContext)
 }
 
-// One add dialog for the whole app shell: opened from the desktop header
-// button and from the "+" in the middle of the mobile tab bar. It starts in
-// quick entry ("350 кофе"); the full form is for receipts and comments.
+// One add sheet for the whole app shell: opened from the desktop header
+// button and from the "+" in the middle of the mobile tab bar.
 export function AddTransactionProvider({
   children,
-  history,
   ...props
 }: {
   children: React.ReactNode
@@ -32,34 +29,21 @@ export function AddTransactionProvider({
   history: HistoryItem[]
 }) {
   const [open, setOpen] = useState(false)
-  const [detailed, setDetailed] = useState(false)
-  const [mode, setMode] = useState<Mode>("line")
+  const [view, setView] = useState<AddView>("amount")
   // Remount on every open so it starts empty.
   const [round, setRound] = useState(0)
 
-  function show(next: Mode = "line") {
+  function show(next: AddView = "amount") {
     setRound((r) => r + 1)
-    setDetailed(false)
-    setMode(next)
+    setView(next)
     setOpen(true)
   }
 
   return (
     <AddTransactionContext value={show}>
       {children}
-      <ResponsiveDialog open={open} onOpenChange={setOpen} title="Новая запись">
-        {detailed ? (
-          <TransactionForm key={round} {...props} onSaved={() => setOpen(false)} />
-        ) : (
-          <QuickAdd
-            key={round}
-            {...props}
-            history={history}
-            initialMode={mode}
-            onDetailed={() => setDetailed(true)}
-            onDone={() => setOpen(false)}
-          />
-        )}
+      <ResponsiveDialog open={open} onOpenChange={setOpen} title="Новая запись" bare className="bg-card">
+        <AddSheet key={round} {...props} initialView={view} onClose={() => setOpen(false)} />
       </ResponsiveDialog>
     </AddTransactionContext>
   )
@@ -68,7 +52,7 @@ export function AddTransactionProvider({
 export function AddTransactionButton({ className }: { className?: string }) {
   const show = useContext(AddTransactionContext)
   return (
-    <Button onClick={() => show()} className={className}>
+    <Button onClick={() => show()} className={cn("rounded-full", className)}>
       <PlusIcon aria-hidden />
       Добавить
     </Button>
